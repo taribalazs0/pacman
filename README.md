@@ -13,7 +13,7 @@ Pac-Man is a two-dimensional desktop arcade game developed in Java. The player c
 * **Technologies Used**: Java, Swing (`JFrame`, `JPanel`, `Graphics` for low-level drawing, `Timer` for the game loop), and JUnit for testing.
 * **File Format**: A simple CSV file used for storing the leaderboard.
 
-## 4. Detailed Architecture and Class Structure
+## 4. Brief overview of Architecture and Class Structure
 * **`GameEngine`**: The central controller of the game. It contains the game loop, updates the game state (positions, collisions), and manages the score and lives.
 * **`Labyrinth`**: The class representing the map. It stores the locations of walls, empty paths, and dots using a two-dimensional array.
 * **`GameObject` (Abstract Base Class)**: Encapsulates common properties for moving characters (X and Y coordinates, speed, direction).
