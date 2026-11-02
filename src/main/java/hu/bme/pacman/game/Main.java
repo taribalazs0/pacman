@@ -3,22 +3,17 @@ package hu.bme.pacman.game;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-public class Main 
-{
-    public static void main(String[] args) 
-    {
-        // the graphical methods of Swing
-        SwingUtilities.invokeLater(() -> 
-        {
+import hu.bme.pacman.system.GamePanel;
+
+public class Main {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
             JFrame window = new JFrame("Pac-Man");
             window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            
-            // here we will have the gamespace (GameEngine, JPanel)
-            
-            window.setSize(700, 750);
+            window.add(new GamePanel());
+            window.pack();
             window.setResizable(false);
-            // set window to the middle of the screen
-            window.setLocationRelativeTo(null); 
+            window.setLocationRelativeTo(null);
             window.setVisible(true);
         });
     }

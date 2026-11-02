@@ -1,16 +1,25 @@
 package hu.bme.pacman.game;
 
-interface Command {
-    // execute command
-    public void execute();
-}
+import hu.bme.enums.Directions;
 
-public class PacMan extends GameObject implements Command{
+/**
+ * The player. Holds the latest command from the keyboard and runs it
+ * when the engine asks. Pac-Man is not itself a command.
+ */
+public class PacMan extends GameObject {
     private Command currentCommand;
 
-    @Override
-    public void execute() {
-        // TODO Auto-generated method stub
-        
+    public PacMan(int x, int y) {
+        super(x, y, 1, Directions.IDLE);
+    }
+
+    public void setCurrentCommand(Command currentCommand) {
+        this.currentCommand = currentCommand;
+    }
+
+    public void processInput() {
+        if (currentCommand != null) {
+            currentCommand.execute();
+        }
     }
 }
