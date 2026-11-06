@@ -17,6 +17,7 @@ public class PacMan extends GameObject {
         this.currentCommand = currentCommand;
     }
 
+    /* If we have a valid incoming command, we execute the Command interface */
     public void processInput() {
         if (currentCommand != null) {
             currentCommand.execute();

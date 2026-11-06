@@ -21,6 +21,7 @@ import hu.bme.pacman.game.PacMan;
  * The screen. It asks the engine what the world looks like, then draws it.
  * It never decides whether a move is legal.
  */
+
 public class GamePanel extends JPanel {
     private static final int TILE = 32;
     private static final int HUD = 36;
@@ -31,11 +32,16 @@ public class GamePanel extends JPanel {
         this(new GameEngine());
     }
 
+
     public GamePanel(GameEngine engine) {
         this.engine = engine;
         setBackground(Color.BLACK);
         setFocusable(true);
+
+        /* Loading the map: Original, or edited */
         Labyrinth map = engine.getMap();
+
+
         setPreferredSize(new Dimension(map.getWidth() * TILE, map.getHeight() * TILE + HUD));
 
         addKeyListener(new KeyAdapter() {

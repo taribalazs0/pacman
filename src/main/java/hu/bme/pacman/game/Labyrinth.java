@@ -47,6 +47,7 @@ public class Labyrinth implements Serializable {
         grid[y][x] = type;
     }
 
+    /** A direction in the maze is walkable, if it is not a wall */
     public boolean isWalkable(int x, int y) {
         return getCell(x, y) != CellType.WALL;
     }

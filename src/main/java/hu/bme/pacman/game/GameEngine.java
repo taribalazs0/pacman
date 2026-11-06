@@ -14,6 +14,7 @@ import hu.bme.enums.GhostPersonality;
  * then pick up a dot if Pac-Man is standing on one.
  */
 public class GameEngine implements Serializable {
+
     public static final int DOT_SCORE = 10;
 
     private int score;
@@ -35,7 +36,7 @@ public class GameEngine implements Serializable {
         this.currentLevel = 1;
     }
 
-    /** A map and actors built by a test, or later by a loaded file. */
+    /** A map and actors built by a test, or by a loaded file if we load from a previous save */
     public GameEngine(Labyrinth map, PacMan pacman, List<Ghost> ghosts) {
         this.map = map;
         this.pacman = pacman;
@@ -58,10 +59,12 @@ public class GameEngine implements Serializable {
         }
     }
 
+    /* Todo */
     public void saveGameState(String file) {
         throw new UnsupportedOperationException("Saving a game comes later");
     }
-
+    
+    /* Todo */
     public void loadGameState(String file) {
         throw new UnsupportedOperationException("Loading a game comes later");
     }
@@ -140,18 +143,29 @@ public class GameEngine implements Serializable {
 
         private static Demo parse() {
             String[] rows = {
-                    "############",
-                    "#P.........#",
-                    "#.####.###.#",
-                    "#.#......#.#",
-                    "#.#.##.#.#.#",
-                    "#..........#",
-                    "#.#.##.#.#.#",
-                    "#.#..G...#.#",
-                    "#.####.###.#",
-                    "#..........#",
-                    "############"
-            };
+    "############################",
+    "#............##............#",
+    "#o####.#####.##.#####.####o#",
+    "#..........................#",
+    "#.####.##.########.##.####.#",
+    "#......##....##....##......#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.##..........##.####.#",
+    "#.####.##.###..###.##.####.#",
+    "#.........# GGGG #.........#",
+    "#.####.##.########.##.####.#",
+    "#.####.##..........##.####.#",
+    "#.####.##.########.##.####.#",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#o..##.......P........##..o#",
+    "###.##.##.########.##.##.###",
+    "#......##....##....##......#",
+    "#.##########.##.##########.#",
+    "#..........................#",
+    "############################"
+};
+
             int height = rows.length;
             int width = rows[0].length();
             CellType[][] grid = new CellType[height][width];
