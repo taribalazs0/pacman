@@ -1,6 +1,7 @@
 package hu.bme.pacman.system;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -119,6 +120,90 @@ public final class LevelManager {
 
         Labyrinth map = new Labyrinth(rows.toArray(new CellType[0][]));
         return new LevelData(map, pacman, ghosts);
+    }
+
+    /**
+     * Writes a level to a map file, in the same format loadFromCSV reads.
+     * The actors are written where they stand now, so pass a level whose actors are on their start tiles.
+     *
+     * @param file  path of the map file; an existing file is overwritten
+     * @param level the maze and the actors to save
+     * @throws IOException if the file cannot be written
+     * @throws IllegalArgumentException if no file name or level is given, or the level is not a valid map
+     */
+    public static void saveToCSV(String file, LevelData level) throws IOException {
+        if (file == null || file.isBlank()) {
+            throw new IllegalArgumentException("No map file given");
+        }
+        if (level == null) {
+            throw new IllegalArgumentException("No level given");
+        }
+
+        // Build the whole picture in memory first. Opening the file for writing empties it at once,
+        // so every check must pass before that, or a bad level would wipe a good file.
+        Labyrinth map = level.getMap();
+        char[][] picture = new char[map.getHeight()][map.getWidth()];
+        for (int y = 0; y < map.getHeight(); y++) {
+            for (int x = 0; x < map.getWidth(); x++) {
+                picture[y][x] = symbolOf(map.getCell(x, y));
+            }
+        }
+
+        PacMan pacman = level.getPacman();
+        placeActor(picture, map, pacman.getX(), pacman.getY(), PACMAN);
+        for (Ghost ghost : level.getGhosts()) {
+            placeActor(picture, map, ghost.getX(), ghost.getY(), symbolOf(ghost.getPersonality()));
+        }
+
+        // try block without catch, IOException gets to the caller
+        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8)) {
+            for (char[] row : picture) {
+                writer.write(row);
+                writer.newLine();
+            }
+        }
+    }
+
+    /**
+     * Puts an actor's letter on its tile. The tile must be inside the map, EMPTY in the maze,
+     * and not taken by another actor; otherwise loading the file back would not give the same level.
+     */
+    private static void placeActor(char[][] picture, Labyrinth map, int x, int y, char symbol) {
+        if (x < 0 || y < 0 || x >= map.getWidth() || y >= map.getHeight()) {
+            throw new IllegalArgumentException("'" + symbol + "' is outside the map at " + x + ", " + y);
+        }
+        if (map.getCell(x, y) != CellType.EMPTY) {
+            throw new IllegalArgumentException("'" + symbol + "' stands on " + map.getCell(x, y)
+                    + " at " + x + ", " + y + ", but actors must stand on EMPTY");
+        }
+        if (picture[y][x] != EMPTY) {
+            throw new IllegalArgumentException("'" + symbol + "' and '" + picture[y][x]
+                    + "' share the tile " + x + ", " + y);
+        }
+        picture[y][x] = symbol;
+    }
+
+    /**
+     * The character a tile is written as.
+     * Left of the arrow is the CellType constant, right of it our char constant, hence the class name.
+     */
+    private static char symbolOf(CellType cell) {
+        return switch (cell) {
+            case WALL -> LevelManager.WALL;
+            case DOT -> LevelManager.DOT;
+            case POWERPELLET -> LevelManager.POWERPELLET;
+            case EMPTY -> LevelManager.EMPTY;
+        };
+    }
+
+    /** The letter a ghost is written as. */
+    private static char symbolOf(GhostPersonality personality) {
+        return switch (personality) {
+            case TRACKER -> GHOST_TRACKER;
+            case AMBUSHER -> GHOST_AMBUSHER;
+            case WANDERER -> GHOST_WANDERER;
+            case CHAOTIC -> GHOST_CHAOTIC;
+        };
     }
 
     /** Which personality a ghost letter stands for. */

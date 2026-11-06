@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="hu.bme.pacman.game.GameEngineTest" time="0.461" tests="4" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="hu.bme.pacman.game.GameEngineTest" time="0.186" tests="4" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -15,7 +15,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot\bin"/>
-    <property name="sun.java.command" value="C:\Users\skyba\AppData\Local\Temp\surefire18129713485566156527\surefirebooter-20261106212650044_3.jar C:\Users\skyba\AppData\Local\Temp\surefire18129713485566156527 2026-11-06T21-26-49_164-jvmRun1 surefire-20261106212650044_1tmp surefire_0-20261106212650044_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\skyba\AppData\Local\Temp\surefire11763533352429188506\surefirebooter-20261106213958128_3.jar C:\Users\skyba\AppData\Local\Temp\surefire11763533352429188506 2026-11-06T21-39-57_625-jvmRun1 surefire-20261106213958128_1tmp surefire_0-20261106213958128_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\target\test-classes;C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\target\classes;C:\Users\skyba\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.0\junit-jupiter-api-5.10.0.jar;C:\Users\skyba\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\skyba\.m2\repository\org\junit\platform\junit-platform-commons\1.10.0\junit-platform-commons-1.10.0.jar;C:\Users\skyba\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\skyba\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.0\junit-jupiter-engine-5.10.0.jar;C:\Users\skyba\.m2\repository\org\junit\platform\junit-platform-engine\1.10.0\junit-platform-engine-1.10.0.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -30,7 +30,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="C:\Users\skyba\AppData\Local\Temp\surefire18129713485566156527\surefirebooter-20261106212650044_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\skyba\AppData\Local\Temp\surefire11763533352429188506\surefirebooter-20261106213958128_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="21.0.12.1+1-LTS"/>
@@ -59,8 +59,8 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="aBlockedTurnDoesNotCancelTheCurrentStep" classname="hu.bme.pacman.game.GameEngineTest" time="0.187"/>
-  <testcase name="facingAWallDoesNotChangePosition" classname="hu.bme.pacman.game.GameEngineTest" time="0.022"/>
-  <testcase name="steppingOnADotRaisesTheScoreAndClearsTheTile" classname="hu.bme.pacman.game.GameEngineTest" time="0.004"/>
-  <testcase name="aPlusShapedTileIsAnIntersection" classname="hu.bme.pacman.game.GameEngineTest" time="0.007"/>
+  <testcase name="aBlockedTurnDoesNotCancelTheCurrentStep" classname="hu.bme.pacman.game.GameEngineTest" time="0.095"/>
+  <testcase name="facingAWallDoesNotChangePosition" classname="hu.bme.pacman.game.GameEngineTest" time="0.006"/>
+  <testcase name="steppingOnADotRaisesTheScoreAndClearsTheTile" classname="hu.bme.pacman.game.GameEngineTest" time="0.003"/>
+  <testcase name="aPlusShapedTileIsAnIntersection" classname="hu.bme.pacman.game.GameEngineTest" time="0.005"/>
 </testsuite>
