@@ -5,6 +5,9 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -14,6 +17,7 @@ import hu.bme.enums.Directions;
 import hu.bme.pacman.game.GameEngine;
 import hu.bme.pacman.game.Ghost;
 import hu.bme.pacman.game.Labyrinth;
+import hu.bme.pacman.game.LevelData;
 import hu.bme.pacman.game.MoveCommand;
 import hu.bme.pacman.game.PacMan;
 
@@ -26,10 +30,13 @@ public class GamePanel extends JPanel {
     private static final int TILE = 32;
     private static final int HUD = 36;
 
+    // Default level/map
+    private static final String DEFAULT_LEVEL = "maps/level1.txt";
+
     private final GameEngine engine;
 
     public GamePanel() {
-        this(new GameEngine());
+        this(createDefaultEngine());
     }
 
 
@@ -136,4 +143,21 @@ public class GamePanel extends JPanel {
         g.setColor(Color.RED);
         g.fillOval(pixelX, pixelY, TILE - 4, TILE - 4);
     }
+
+    /**
+    *  Loads the default map and builds a new game on it.
+    * Loading belongs to the UI side; the model never touches files.
+    * static: it runs inside this(...), before the GamePanel object exists.
+    */
+    private static GameEngine createDefaultEngine() {
+        try {
+            LevelData level = LevelManager.loadFromCSV(DEFAULT_LEVEL);
+            return new GameEngine(level);
+        } catch (IOException e) {
+            throw new UncheckedIOException(
+                "Could not load the default map: " + Path.of(DEFAULT_LEVEL).toAbsolutePath(), e);
+        }
+}
+
+
 }

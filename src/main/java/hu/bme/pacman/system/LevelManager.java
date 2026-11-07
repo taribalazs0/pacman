@@ -19,10 +19,21 @@ import hu.bme.pacman.game.PacMan;
 /**
  * Stateless I/O helper for map files.
  * A map file is a text picture of the maze: one row per line, one character per tile.
+ * 
+ * first row of csv file:
+ * currentScore;currentLives;currentLevels
  *
- * #  wall           .  dot            o  power pellet     _  empty
+ * #  wall          
+ * .  dot            
+ * o  power pellet     
+ * _  empty
+ * 
  * P  Pac-Man's start (exactly one)
- * T  TRACKER    A  AMBUSHER    W  WANDERER    C  CHAOTIC   (ghost starts)
+ * 
+ * T  TRACKER    
+ * A  AMBUSHER    
+ * W  WANDERER    
+ * C  CHAOTIC   (ghost starts)
  *
  * Under P and the ghost letters the tile is EMPTY; the letters only mark where an actor starts.
  */

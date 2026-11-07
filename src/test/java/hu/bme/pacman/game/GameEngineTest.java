@@ -23,7 +23,7 @@ class GameEngineTest {
         Labyrinth map = new Labyrinth(grid);
         PacMan pacman = new PacMan(1, 1);
         pacman.setDirection(Directions.LEFT);
-        GameEngine engine = new GameEngine(map, pacman, List.of());
+        GameEngine engine = new GameEngine(new LevelData(map, pacman, List.of()));
 
         engine.update();
 
@@ -41,7 +41,7 @@ class GameEngineTest {
         Labyrinth map = new Labyrinth(grid);
         PacMan pacman = new PacMan(1, 1);
         pacman.setDirection(Directions.RIGHT);
-        GameEngine engine = new GameEngine(map, pacman, List.of());
+        GameEngine engine = new GameEngine(new LevelData(map, pacman, List.of()));
 
         engine.update();
 
@@ -62,7 +62,7 @@ class GameEngineTest {
         PacMan pacman = new PacMan(1, 1);
         pacman.setDirection(Directions.RIGHT);
         pacman.setCurrentCommand(new MoveCommand(pacman, map, Directions.UP));
-        GameEngine engine = new GameEngine(map, pacman, List.of());
+        GameEngine engine = new GameEngine(new LevelData(map, pacman, List.of()));
 
         engine.update();
 

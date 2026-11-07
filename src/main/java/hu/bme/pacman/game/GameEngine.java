@@ -22,28 +22,18 @@ public class GameEngine implements Serializable {
     private int currentLevel;
     private final Labyrinth map;
     private final PacMan pacman;
-    private final List<Ghost> ghosts;
-
-    /** The maze you see when the program starts. */
-    public GameEngine() {
-        Demo demo = Demo.parse();
-        this.map = demo.map;
-        this.pacman = new PacMan(demo.pacmanX, demo.pacmanY);
-        this.ghosts = new ArrayList<>();
-        this.ghosts.add(new Ghost(demo.ghostX, demo.ghostY, GhostPersonality.TRACKER));
-        this.score = 0;
-        this.lives = 3;
-        this.currentLevel = 1;
-    }
+    private final List<Ghost> ghosts;    
 
     /** A map and actors built by a test, or by a loaded file if we load from a previous save */
-    public GameEngine(Labyrinth map, PacMan pacman, List<Ghost> ghosts) {
-        this.map = map;
-        this.pacman = pacman;
-        this.ghosts = ghosts == null ? new ArrayList<>() : ghosts;
-        this.score = 0;
-        this.lives = 3;
-        this.currentLevel = 1;
+    public GameEngine(LevelData level) {
+        if(level == null) { throw new IllegalArgumentException(); }
+
+        this.map = level.getMap();
+        this.pacman = level.getPacman();
+        this.ghosts = level.getGhosts() == null ? new ArrayList<>() : level.getGhosts();
+        this.score = this.getScore();
+        this.lives = this.getLives();
+        this.currentLevel = getCurrentLevel();
     }
 
     public void update() {
@@ -122,82 +112,4 @@ public class GameEngine implements Serializable {
         return ghosts;
     }
 
-    /**
-     * '#' wall, '.' dot, 'P' Pac-Man's start, 'G' the ghost's start.
-     * P and G are stored as empty tiles; the letters only mark where to place them.
-     */
-    private static final class Demo {
-        private final Labyrinth map;
-        private final int pacmanX;
-        private final int pacmanY;
-        private final int ghostX;
-        private final int ghostY;
-
-        private Demo(Labyrinth map, int pacmanX, int pacmanY, int ghostX, int ghostY) {
-            this.map = map;
-            this.pacmanX = pacmanX;
-            this.pacmanY = pacmanY;
-            this.ghostX = ghostX;
-            this.ghostY = ghostY;
-        }
-
-        private static Demo parse() {
-            String[] rows = {
-    "############################",
-    "#............##............#",
-    "#o####.#####.##.#####.####o#",
-    "#..........................#",
-    "#.####.##.########.##.####.#",
-    "#......##....##....##......#",
-    "#.####.#####.##.#####.####.#",
-    "#.####.##..........##.####.#",
-    "#.####.##.###..###.##.####.#",
-    "#.........# GGGG #.........#",
-    "#.####.##.########.##.####.#",
-    "#.####.##..........##.####.#",
-    "#.####.##.########.##.####.#",
-    "#............##............#",
-    "#.####.#####.##.#####.####.#",
-    "#o..##.......P........##..o#",
-    "###.##.##.########.##.##.###",
-    "#......##....##....##......#",
-    "#.##########.##.##########.#",
-    "#..........................#",
-    "############################"
-};
-
-            int height = rows.length;
-            int width = rows[0].length();
-            CellType[][] grid = new CellType[height][width];
-            int pacmanX = 1;
-            int pacmanY = 1;
-            int ghostX = 1;
-            int ghostY = 1;
-
-            for (int y = 0; y < height; y++) {
-                if (rows[y].length() != width) {
-                    throw new IllegalArgumentException("Demo map rows differ in length");
-                }
-                for (int x = 0; x < width; x++) {
-                    char tile = rows[y].charAt(x);
-                    switch (tile) {
-                        case '#' -> grid[y][x] = CellType.WALL;
-                        case '.' -> grid[y][x] = CellType.DOT;
-                        case 'P' -> {
-                            grid[y][x] = CellType.EMPTY;
-                            pacmanX = x;
-                            pacmanY = y;
-                        }
-                        case 'G' -> {
-                            grid[y][x] = CellType.EMPTY;
-                            ghostX = x;
-                            ghostY = y;
-                        }
-                        default -> grid[y][x] = CellType.EMPTY;
-                    }
-                }
-            }
-            return new Demo(new Labyrinth(grid), pacmanX, pacmanY, ghostX, ghostY);
-        }
-    }
 }
