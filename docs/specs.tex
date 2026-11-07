@@ -1,0 +1,476 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\setlist[itemize]{label=-}
+\usepackage{booktabs}
+\usepackage{graphicx} % Hozzáadva a nagyméretű UML ábrák szélességének auto-skálázásához
+\usepackage{tikz} % Added for the FSM diagram
+\usetikzlibrary{shapes.multipart, positioning, arrows.meta} % Added for UML Diagram
+\usepackage[colorlinks=true, linkcolor=black, urlcolor=blue]{hyperref}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textbf{PAC-MAN}}
+\rhead{Balázs Tari}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+% --- Title Page ---
+\begin{titlepage}
+    \centering
+    \vspace*{4cm}
+    {\Huge \textbf{PAC-MAN} \par}
+    \vspace{1.5cm}
+    {\LARGE Basics of Programming 3. \par}
+    \vspace{0.5cm}
+    {\Large Project Specification \par}
+    
+    \vspace{4.5cm}
+    
+    {\Large \textbf{Balázs Tari} \par}
+    \vspace{0.3cm}
+    {\Large E3K6W5 \par}
+    
+    \vfill
+    
+    {\large October 16, 2026 \par}
+\end{titlepage}
+
+% --- Table of Contents ---
+\tableofcontents
+\newpage
+
+% --- 1. Task Description ---
+\section{Task Description}
+Pac-Man is a two-dimensional desktop arcade game. The player controls the yellow figure in a labyrinth, whose task is to collect all dots while avoiding the ghosts moving around the map. If Pac-Man collects one of the 4 'Power Pellets' located in the labyrinth, the player gains the ability to eat ghosts for 6 seconds, earning additional points. 
+
+The software's graphical user interface is built using the Java Swing framework, the persistent storage of the game state is managed via file handling, and the code quality is ensured by automated JUnit unit tests.
+
+% --- 2. Use-Cases ---
+\section{Use-Cases}
+\begin{enumerate}
+    \item \textbf{Starting and controlling the game:} The user can start a new game from the menu and control Pac-Man within the labyrinth using the WASD keyboard keys.
+    \item \textbf{Collecting dots and victory:} As Pac-Man passes through the dots, they disappear, and the score increases. If all dots are consumed, the player wins and proceeds to the next level. At higher levels, the difficulty of the game increases.
+    \item \textbf{Collision detection with ghosts:} If the character collides with a ghost, it loses a life. If the number of lives reaches zero, the game ends (Game Over). Upon starting a new game, the player always begins at the first level.
+    \item \textbf{Saving high-scores:} At the end of a game, the system records and saves the achieved score to a file.
+    \item \textbf{Saving game state:} The game can be saved at any time and state, allowing the player to load and resume it later from a file.
+    \item \textbf{Level editor mode:} In addition to the base game, the user has the ability to design their own custom maps, save them, and load previously created maps to play on.
+\end{enumerate}
+
+% --- 3. Solution Overview ---
+\section{Solution Overview}
+\begin{enumerate}
+    \item \textbf{Applied technological solutions:} Java SE, Swing (JFrame, JPanel, Graphics for low-level drawing, Timer for the game loop), and JUnit 5 for automated testing.
+    \item \textbf{File formats:} A simple CSV file for storing the high-score table, a plain-text tile picture (one character per tile) for map layouts, and Java binary serialization for saved game states.
+\end{enumerate}
+
+\clearpage
+
+% --- 4. Detailed Architecture and Class Structure ---
+\section{Detailed Architecture and Class Structure}
+
+\textbf{Core Game Model}
+\begin{itemize}
+    \item \textbf{GameEngine:} The central controller of the game. It contains the game loop, updates the game state (positions, collisions), and manages the score, remaining lives, and the \texttt{currentLevel}. It is also responsible for saving and loading the active game state (utilizing \texttt{java.io.Serializable}). As the level increases, the duration of the ghosts' Frightened state progressively decreases to increase difficulty, while movement speeds remain constant. A game is started from a \texttt{LevelData} object built by the \texttt{LevelManager}.
+    \item \textbf{Labyrinth:} The class representing the map. It stores the type of every tile (wall, dot, power pellet, empty) in a two-dimensional array, indexed as \texttt{grid[row][column]}.
+    \item \textbf{GameObject} (Abstract Base Class): Encapsulates common properties for all moving entities (X and Y coordinates, speed, direction). Positions are \textbf{tile coordinates}: \texttt{x} is the column and \texttt{y} is the row of the maze, and \texttt{speed} is the number of tiles one step covers. Two entities collide when they stand on the same tile, or when they swapped tiles during the same tick (otherwise they would pass through each other).
+    \begin{itemize}
+        \item \textbf{PacMan} (Child Class): Represents the state of the player's character and handles its specific movement and input logic.
+        \item \textbf{Ghost} (Child Class): Represents the state of the ghosts and manages their movement. The target tile is computed by a separate strategy object chosen by the ghost's personality (see Section~\ref{sec:design_patterns}).
+    \end{itemize}
+    \item \textbf{LevelData:} A plain data holder for the content of one map file: the \texttt{Labyrinth}, Pac-Man on his start tile, and the ghosts on their start tiles. The \texttt{LevelManager} creates it, and the \texttt{GameEngine} is built from its parts.
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{UI and Management Classes}
+\begin{itemize}
+    \item \textbf{MainFrame (JFrame):} The application's main window utilizing a CardLayout to switch between the menu, the active game, and the editor.
+    \item \textbf{MainMenu (JPanel):} The start screen providing options to start a new game, load a saved game, view high scores, or open the map editor.
+    \item \textbf{GamePanel (JPanel):} The active gameplay screen that bridges the Model and View. It receives the game state from the \texttt{GameEngine} and renders the maze and entities in its \texttt{paintComponent} method.
+    \item \textbf{MapEditor (JPanel):} A graphical interface with a clickable grid allowing the user to draw custom mazes (placing walls, dots, power pellets, Pac-Man's start tile, and the start tiles of the four ghosts).
+    \item \textbf{LevelManager (Factory):} A dedicated, stateless class that reads a map file into a \texttt{LevelData} (maze, Pac-Man, and ghosts) and writes a \texttt{LevelData} back to a map file in the same format (see Section~\ref{sec:custom_maps}). It also manages the high-score table.
+\end{itemize}
+
+
+\begin{figure}[h!]
+    \centering
+    \resizebox{\textwidth}{!}{ % Ráhúzza a diagramot a maximális lapszélességre
+    \begin{tikzpicture}[
+        umlclass/.style={
+            draw, thick,
+            rectangle split,
+            rectangle split parts=3,
+            font=\sffamily\footnotesize, % Olvashatóbb, nagyobb betűméret
+            align=left,
+            text width=4.2cm,
+            fill=white
+        },
+        umlenum/.style={
+            draw, thick,
+            rectangle split,
+            rectangle split parts=2,
+            font=\sffamily\footnotesize,
+            align=left,
+            text width=3.2cm,
+            fill=gray!10
+        }
+    ]
+        
+        % === UI & MANAGEMENT LAYER ===
+        \node[umlclass] (MainFrame) at (0, 7.5) {
+            \textbf{MainFrame}
+            \nodepart{two}
+            - cardLayout: CardLayout \\
+            - mainMenu: MainMenu \\
+            - gamePanel: GamePanel \\
+            - mapEditor: MapEditor
+            \nodepart{three}
+            + switchScreen(screen: String): void
+        };
+
+        \node[umlclass] (MainMenu) at (-5.5, 7.5) {
+            \textbf{MainMenu}
+            \nodepart{two}
+            - startBtn: JButton \\
+            - loadGameBtn: JButton \\
+            - editorBtn: JButton \\
+            - leaderboardBtn: JButton
+            \nodepart{three}
+            - initGUI(): void
+        };
+
+        \node[umlclass] (MapEditor) at (5.5, 7.5) {
+            \textbf{MapEditor}
+            \nodepart{two}
+            - editGrid: CellType[][] \\
+            - saveBtn: JButton
+            \nodepart{three}
+            + saveCustomMap(): void
+        };
+
+        \node[umlclass] (LevelManager) at (5.5, 3.5) {
+            \textbf{LevelManager}
+            \nodepart{two}
+            % Nincs belső állapot (Utility/Factory)
+            \nodepart{three}
+            + saveToCSV(file: String, level: LevelData): void \\
+            + loadFromCSV(file: String): LevelData
+        };
+
+        \node[umlclass] (GamePanel) at (0, 3.5) {
+            \textbf{GamePanel}
+            \nodepart{two}
+            - engine: GameEngine \\
+            - keyListener: KeyListener
+            \nodepart{three}
+            \# paintComponent(g: Graphics): void
+        };
+
+
+        % === CORE MODEL LAYER ===
+        \node[umlclass] (GameEngine) at (0, -2.5) {
+            \guillemotleft Serializable\guillemotright \\
+            \textbf{GameEngine}
+            \nodepart{two}
+            - score: int \\
+            - lives: int \\
+            - currentLevel: int \\
+            - map: Labyrinth \\
+            - pacman: PacMan \\
+            - ghosts: List$<$Ghost$>$
+            \nodepart{three}
+            + update(): void \\
+            + checkCollisions(): void \\
+            + saveGameState(file: String): void \\
+            + loadGameState(file: String): void
+        };
+
+        \node[umlclass] (Labyrinth) at (5.5, -2.5) {
+            \guillemotleft Serializable\guillemotright \\
+            \textbf{Labyrinth}
+            \nodepart{two}
+            - grid: CellType[][]
+            \nodepart{three}
+            + getCell(x, y): CellType \\
+            + loadMap(filename: String): void \\
+            + isIntersection(x, y): boolean
+        };
+
+        \node[umlclass] (GameObject) at (0, -8.5) {
+            \guillemotleft Serializable\guillemotright \\
+            \textbf{\textit{GameObject}}
+            \nodepart{two}
+            \# x, y: int (tile) \\
+            \# speed: int \\
+            \# direction: Direction
+            \nodepart{three}
+            + move(): void \\
+            + getX(): int \\
+            + getY(): int
+        };
+
+        \node[umlclass] (PacMan) at (-3, -13.0) {
+            \textbf{PacMan}
+            \nodepart{two}
+            - currentCommand: Command
+            \nodepart{three}
+            + processInput(): void
+        };
+        
+        \node[umlclass] (Command) at (-8, -13.0) {
+            \guillemotleft interface\guillemotright \\
+            \textbf{Command}
+            \nodepart{two}
+            \nodepart{three}
+            + execute(): void
+        };
+
+        \node[umlclass] (Ghost) at (3, -13.0) {
+            \textbf{Ghost}
+            \nodepart{two}
+            - state: GhostState \\
+            - personality: GhostPersonality \\
+            - strategy: GhostStrategy \\
+            - targetX, targetY: int
+            \nodepart{three}
+            + updateState(): void
+        };
+
+        \node[umlclass] (LevelData) at (5.5, -8.0) {
+            \textbf{LevelData}
+            \nodepart{two}
+            - map: Labyrinth \\
+            - pacman: PacMan \\
+            - ghosts: List$<$Ghost$>$
+            \nodepart{three}
+            + getMap(): Labyrinth \\
+            + getPacman(): PacMan \\
+            + getGhosts(): List$<$Ghost$>$
+        };
+
+        \node[umlclass] (GhostStrategy) at (3, -18.0) {
+            \guillemotleft interface\guillemotright \\
+            \textbf{GhostStrategy}
+            \nodepart{two}
+            \nodepart{three}
+            + computeTarget(...): void
+        };
+
+        \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.2cm, fill=yellow!10] (StrategyNote) at (9.6, -18.0) {
+            Implemented by (all \guillemotleft Serializable\guillemotright): \\
+            TrackerStrategy, AmbusherStrategy, \\
+            WandererStrategy, ChaoticStrategy \\
+            (ChaoticStrategy holds the other three \\
+            and swaps them every 15 seconds)
+        };
+
+        % === DATA MODELS (ENUMS) SZUPERÁLT BLOKK ===
+        % Dedikált, halvány hátterű keret az Enumoknak
+       \draw[dashed, fill=blue!5, rounded corners] (8.2, 4.5) rectangle (12.8, -13.5);
+        \node[font=\sffamily\bfseries, text=blue!80!black] at (10.5, 4.0) {Data Models (Enums)};
+
+        \node[umlenum] (CellType) at (10.5, 1.5) {
+            \textbf{\guillemotleft enum\guillemotright \\ CellType}
+            \nodepart{two}
+            WALL \\ DOT \\ POWERPELLET \\ EMPTY
+        };
+
+        \node[umlenum] (Direction) at (10.5, -2.5) {
+            \textbf{\guillemotleft enum\guillemotright \\ Direction}
+            \nodepart{two}
+            UP \\ DOWN \\ LEFT \\ RIGHT \\ IDLE
+        };
+
+        \node[umlenum] (GhostState) at (10.5, -6.5) {
+            \textbf{\guillemotleft enum\guillemotright \\ GhostState}
+            \nodepart{two}
+            CHASE \\ SCATTER \\ FRIGHTENED \\ DEAD
+        };
+
+        \node[umlenum] (GhostPersonality) at (10.5, -10.5) {
+            \textbf{\guillemotleft enum\guillemotright \\ GhostPersonality}
+            \nodepart{two}
+            TRACKER \\ AMBUSHER \\ WANDERER \\ CHAOTIC
+        };
+
+        % === RELATIONSHIPS ===
+        % UI dependenciák és kompozíciók
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.west) -- (MainMenu.east);
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.east) -- (MapEditor.west);
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.south) -- (GamePanel.north);
+        
+        \draw[dashed, ->, thick] (MapEditor.south) -- (LevelManager.north);
+        \draw[dashed, ->, thick] (Labyrinth.north) -- (LevelManager.south);
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (GamePanel.south) -- (GameEngine.north);
+
+        % Model kapcsolatok
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (GameEngine.east) -- (Labyrinth.west) node[midway, above] {1};
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (GameEngine.south) -- (GameObject.north) node[midway, right] {*};
+
+        % Öröklődés (Inheritance)
+        \draw[-{Triangle[open, fill=white, scale=1.2]}, thick] ([yshift=-0.4cm]GameObject.south) -- (GameObject.south);
+        \draw[thick] (PacMan.north) |- ([yshift=-0.4cm]GameObject.south);
+        \draw[thick] (Ghost.north) |- ([yshift=-0.4cm]GameObject.south);
+        
+        % Command pattern aggregáció
+        \draw[{Diamond[fill=white, scale=1.2]}-, thick] (PacMan.west) -- (Command.east);
+
+        % LevelData: LevelManager creates it, GameEngine is built from it
+        \draw[dashed, ->, thick] (LevelManager.east) -- ++(0.3, 0) |- (LevelData.east) node[pos=0.25, right, font=\sffamily\scriptsize] {\guillemotleft create\guillemotright};
+        \draw[dashed, ->, thick] (GameEngine.south east) -- (LevelData.north west) node[midway, above right, font=\sffamily\scriptsize] {\guillemotleft use\guillemotright};
+
+        % Strategy pattern: the ghost owns its strategy object
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (Ghost.south) -- (GhostStrategy.north) node[midway, right] {1};
+        \draw[dashed, thick] (GhostStrategy.east) -- (StrategyNote.west);
+
+    \end{tikzpicture}
+    } % \resizebox vége
+    \caption{UML Class Diagram of the Complete Game Architecture}
+    \label{fig:uml_complete_diagram}
+\end{figure}
+
+\clearpage
+
+% --- 5. Design Patterns ---
+\section{Design Patterns}
+\label{sec:design_patterns}
+To ensure the codebase meets university standards and demonstrates solid object-oriented principles, the implementation must explicitly utilize the following design patterns:
+
+\begin{itemize}
+    \item \textbf{Ghost Movement (Strategy Pattern):} The target-tile calculation of each personality lives in its own class (\texttt{TrackerStrategy}, \texttt{AmbusherStrategy}, \texttt{WandererStrategy}, \texttt{ChaoticStrategy}), all implementing a common \texttt{GhostStrategy} interface. The \texttt{GhostPersonality} enum decides which strategy a ghost receives, and the \texttt{Ghost} holds it as a field (composition instead of inheritance). This matters for the Chaotic ghost: an object cannot change its class at runtime, but a ghost can swap the strategy object it holds. The \texttt{ChaoticStrategy} keeps its own state (the 15-second timer and the currently active strategy) and switches between the other three. Since every ghost is saved together with its strategy, the strategy classes must implement \texttt{java.io.Serializable}.
+    \item \textbf{Ghost Behavior (Finite State Machine):} The ghosts' current mode is managed using a \texttt{GhostState} enum (\texttt{CHASE}, \texttt{SCATTER}, \texttt{FRIGHTENED}, \texttt{DEAD}). The transitions between these states are strictly governed by the game events shown in Figure \ref{fig:ghost_fsm}.
+    
+    \vspace{0.2cm}
+    \textbf{Ghost State Definitions:}
+    \begin{itemize}
+        \item \textbf{CHASE:} Each ghost uses its unique artificial intelligence to actively target and corner Pac-Man.
+        \item \textbf{SCATTER:} Ghosts temporarily stop pursuing Pac-Man and retreat to patrol their own designated corners of the maze.
+        \item \textbf{FRIGHTENED:} Ghosts turn blue, move slowly and randomly, and become vulnerable to being eaten after Pac-Man consumes a Power Pellet.
+        \item \textbf{DEAD (Eaten):} Reduced to just a pair of floating eyes, the ghost rushes back to the central Ghost House to respawn and regain its body.
+    \end{itemize}
+
+    \item \textbf{Player Input (Command Pattern \& Input Buffering):} Movement actions are encapsulated into concrete classes (e.g., \texttt{MoveUpCommand}) implementing a common \texttt{Command} interface with an \texttt{execute()} method. These objects are mapped to their corresponding WASD keys and buffered inside the \texttt{PacMan} instance (\texttt{currentCommand}). This explicitly solves the \textit{corner pre-turning} (input buffering) mechanic, allowing for clean, dynamic execution at intersections without large switch-case statements.
+    \item \textbf{Model-View-Controller Architecture:} The logical game state (Model) must be strictly separated from the Swing rendering (View). Logical entities like \texttt{PacMan} or \texttt{Ghost} must not contain any UI code, \texttt{javax.swing} imports, or \texttt{java.awt.Graphics} references.
+    \item \textbf{Factory Pattern:} The creation of a level from a map file is handled by the dedicated \texttt{LevelManager} class. It parses the file, builds the \texttt{Labyrinth}, creates Pac-Man and the ghosts on their start tiles, and returns them together as a \texttt{LevelData}. This prevents the \texttt{GameEngine} from being bloated with initialization logic, and the engine never needs to know the file format.
+    \item \textbf{Observer Pattern:} The UI rendering component (\texttt{JPanel}) should observe the \texttt{GameEngine}. When the game state updates on a timer tick, the engine notifies the view to trigger a \texttt{repaint()}, decoupling the game loop from the graphics pipeline.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \resizebox{0.9\textwidth}{!}{ % Felnagyítja az ábrát a lapszélesség 90%-ára
+    \begin{tikzpicture}[->, auto, thick,
+                        every node/.style={font=\sffamily\small},
+                        state/.style={draw, circle, minimum size=2.5cm, align=center}]
+        
+        % States positioned manually for maximum compatibility
+        \node[state] (Scatter) at (0, 0) {SCATTER};
+        \node[state] (Chase) at (8.5, 0) {CHASE};
+        \node[state] (Frightened) at (0, -6) {FRIGHTENED};
+        \node[state] (Dead) at (8.5, -6) {DEAD};
+
+        \path
+        (Scatter) edge [bend left=15] node {Timer Ends} (Chase)
+        (Chase) edge [bend left=15] node {Timer Ends} (Scatter)
+        (Scatter) edge [bend right=15] node [left] {Power Pellet} (Frightened)
+        (Chase) edge node [above left, pos=0.3] {Power Pellet} (Frightened)
+        (Frightened) edge node [below] {Eaten by Pac-Man} (Dead)
+        (Frightened) edge [bend right=10] node [below right] {Timeout} (Chase)
+        (Dead) edge node [right] {Reaches Spawn} (Chase);
+    \end{tikzpicture}
+    } % \resizebox vége
+    \caption{Finite State Machine (FSM) of Ghost Behaviors}
+    \label{fig:ghost_fsm}
+\end{figure}
+
+\clearpage
+
+% --- 7. Unit Testing ---
+\section{Unit Testing}
+The project must include a minimum of \textbf{10 automated JUnit 5 tests}. These tests must strictly focus on the core logical components (the Model layer, such as \texttt{GameEngine} and \texttt{Labyrinth}) without instantiating the Swing graphical user interface.
+
+Every test case must follow the industry-standard \textbf{Arrange-Act-Assert (Given-When-Then)} methodology:
+\begin{itemize}
+    \item \textbf{Arrange (Given):} Initialize the \texttt{GameEngine}, load a controlled, minimalist test map matrix, and position the entities manually.
+    \item \textbf{Act (When):} Trigger a specific game mechanic (e.g., execute a movement command, apply a timer tick, or force a collision).
+    \item \textbf{Assert (Then):} Verify the expected changes in the game state using JUnit \texttt{Assertions} (e.g., checking if the score increased, coordinates changed, or ghost states updated).
+\end{itemize}
+
+\subsection*{Mandatory Test Scenarios}
+The test suite must cover critical gameplay mechanics, including but not limited to:
+\begin{itemize}
+    \item \textbf{Wall Collision:} \textit{Given} Pac-Man is adjacent to and facing a \texttt{WALL} tile, \textit{When} a move command is processed, \textit{Then} Pac-Man's $(X, Y)$ coordinates must remain unchanged.
+    \item \textbf{Dot Consumption:} \textit{Given} Pac-Man moves onto a \texttt{DOT} tile, \textit{When} the engine updates the state, \textit{Then} the score must increase, and the tile must change to \texttt{EMPTY}.
+    \item \textbf{Ghost Frightened Transition:} \textit{Given} Pac-Man consumes a \texttt{POWERPELLET}, \textit{When} the collision is resolved, \textit{Then} all ghosts must transition from \texttt{CHASE}/\texttt{SCATTER} to the \texttt{FRIGHTENED} state.
+    \item \textbf{Death Mechanic:} \textit{Given} Pac-Man and a \texttt{CHASE} ghost stand on the same tile (or swap tiles during one tick), \textit{When} collisions are evaluated, \textit{Then} the player's life counter must decrease by 1, and the positions must reset to their respective spawn points.
+\end{itemize}
+\clearpage
+
+% --- 8. I/O and Persistence Contract ---
+\section{I/O and Persistence Contract}
+The application is following these persistance protocols in order to ensure robust data handling:
+
+\subsection*{1. High-Score Table}
+\begin{itemize}
+    \item \textbf{File:} \texttt{highscores.csv}
+    \item \textbf{Responsibility:} Handled by the \texttt{LevelManager} class, which serves as the general I/O utility for the application.
+    \item \textbf{Data Structure:} Each line must strictly follow the format: \texttt{PlayerName;Score;Date}.
+    \item \textbf{Player Identity:} The system must not interrupt the player with a text input prompt to ask for their name. Instead, it must automatically fetch the identity of the user currently logged into the operating system using \texttt{System.getProperty("user.name")}.
+\end{itemize}
+
+\subsection*{2. Active Game State}
+Saving the complex state of an ongoing game (the exact position of Pac-Man, the current \texttt{GhostState} of every ghost, the remaining Frightened timer, the active level, and the state of every individual dot on the map) into a plain text file would require highly error-prone parsing. 
+
+Therefore, the active game state is saved using \textbf{Java Binary Serialization}:
+\begin{itemize}
+    \item \textbf{File:} \texttt{savestate.dat}
+    \item \textbf{Implementation:} All Core Model classes (\texttt{GameEngine}, \texttt{Labyrinth}, \texttt{GameObject}, \texttt{PacMan}, \texttt{Ghost}, the \texttt{GhostStrategy} implementations, and data Enums) must implement the \texttt{java.io.Serializable} interface. \texttt{LevelData} is only passed from the \texttt{LevelManager} to the \texttt{GameEngine} and is not saved, so it does not need to.
+    \item \textbf{Execution:} The \texttt{GameEngine.saveGameState()} method writes the entire engine instance to a binary file using an \texttt{ObjectOutputStream}. Loading a game simply reads the object back into memory using an \texttt{ObjectInputStream}, perfectly restoring the exact state without manual data mapping.
+\end{itemize}
+
+\subsection*{3. Maps}
+\label{sec:custom_maps}
+\begin{itemize}
+    \item \textbf{Format:} Both the built-in levels and the maps made in the \texttt{MapEditor} are plain-text files that look like the maze itself: one maze row per line, one character per tile. The \texttt{LevelManager} reads them line by line with \texttt{loadFromCSV} and writes them with \texttt{saveToCSV}.
+    \item \textbf{Symbols:}
+
+    \vspace{0.2cm}
+    \begin{tabular}{@{}cll@{}}
+        \toprule
+        \textbf{Character} & \textbf{Meaning} & \textbf{Stored as} \\
+        \midrule
+        \texttt{\#} & Wall & \texttt{CellType.WALL} \\
+        \texttt{.} & Dot & \texttt{CellType.DOT} \\
+        \texttt{o} & Power pellet & \texttt{CellType.POWERPELLET} \\
+        \texttt{\_} & Empty floor & \texttt{CellType.EMPTY} \\
+        \texttt{P} & Pac-Man's start tile (exactly one) & \texttt{PacMan} on an \texttt{EMPTY} tile \\
+        \texttt{T} & Start tile of a \texttt{TRACKER} ghost & \texttt{Ghost} on an \texttt{EMPTY} tile \\
+        \texttt{A} & Start tile of an \texttt{AMBUSHER} ghost & \texttt{Ghost} on an \texttt{EMPTY} tile \\
+        \texttt{W} & Start tile of a \texttt{WANDERER} ghost & \texttt{Ghost} on an \texttt{EMPTY} tile \\
+        \texttt{C} & Start tile of a \texttt{CHAOTIC} ghost & \texttt{Ghost} on an \texttt{EMPTY} tile \\
+        \bottomrule
+    \end{tabular}
+    \vspace{0.2cm}
+
+    \item \textbf{Why characters instead of \texttt{CellType} names:} A \texttt{CellType} matrix can only describe tiles, so it has no way to record where Pac-Man and the ghosts start. The character picture stores both, stays readable, and can be edited by hand. The ghosts' start tiles also mark the Ghost House, where \texttt{DEAD} ghosts return.
+    \item \textbf{Validation:} Every row must have the same length, exactly one \texttt{P} is required, and any other character (including a space) is rejected with its line and column. Empty lines and spaces at the end of a line are ignored, which is why empty floor is written as \texttt{\_} and not as a space.
+    \item \textbf{Example} (a small maze with Pac-Man, a power pellet, and two ghosts):
+
+    \vspace{0.1cm}
+\begin{verbatim}
+#########
+#P..o...#
+#.##_##.#
+#..T_A..#
+#########
+\end{verbatim}
+\end{itemize}
+
+\end{document}
