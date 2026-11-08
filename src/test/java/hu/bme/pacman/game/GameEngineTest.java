@@ -25,7 +25,7 @@ class GameEngineTest {
         pacman.setDirection(Directions.LEFT);
         GameEngine engine = new GameEngine(new LevelData(map, pacman, List.of()));
 
-        engine.update();
+        engine.step();
 
         assertEquals(1, pacman.getX());
         assertEquals(1, pacman.getY());
@@ -43,7 +43,7 @@ class GameEngineTest {
         pacman.setDirection(Directions.RIGHT);
         GameEngine engine = new GameEngine(new LevelData(map, pacman, List.of()));
 
-        engine.update();
+        engine.step();
 
         assertEquals(2, pacman.getX());
         assertEquals(1, pacman.getY());
@@ -64,7 +64,7 @@ class GameEngineTest {
         pacman.setCurrentCommand(new MoveCommand(pacman, map, Directions.UP));
         GameEngine engine = new GameEngine(new LevelData(map, pacman, List.of()));
 
-        engine.update();
+        engine.step();
 
         assertEquals(2, pacman.getX());
         assertEquals(1, pacman.getY());

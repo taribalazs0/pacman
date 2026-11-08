@@ -68,12 +68,23 @@ public class GamePanel extends JPanel {
             }
         });
 
-        // One tick every 160 ms. The panel tells the engine to advance, then draws the result.
-        Timer timer = new Timer(160, event -> {
+        // One engine tick per frame, about 60 times a second (1000 / 60 = 16 ms).
+        // The engine moves the actors one tile every TICKS_PER_STEP ticks; in between we only redraw.
+        Timer timer = new Timer(1000 / GameEngine.TICKS_PER_SECOND, event -> {
             engine.update();
             repaint();
         });
         timer.start();
+    }
+
+    /**
+     * Where an actor is drawn along one axis, in pixels from the edge of the maze.
+     * progress 0.0 gives the previous tile, 1.0 the current tile, values in between slide from one to the other.
+     */
+    private static int interpolate(int previous, int current, double progress) {
+        double tile = previous + (current - previous) * progress;
+        // Math.round(double) gives a long, so it has to be narrowed back to int
+        return (int) Math.round(tile * TILE);
     }
 
     @Override
@@ -84,6 +95,8 @@ public class GamePanel extends JPanel {
 
     @Override
     protected void paintComponent(Graphics g) {
+        // Read once, so every actor in this frame is drawn at the same moment of the step
+        double stepProgress = engine.getStepProgress();
         super.paintComponent(g);
         g.setColor(Color.WHITE);
         g.drawString("Score: " + engine.getScore() + "    Lives: " + engine.getLives(), 12, 24);
@@ -95,10 +108,15 @@ public class GamePanel extends JPanel {
             }
         }
         for (Ghost ghost : engine.getGhosts()) {
-            drawGhost(g, ghost.getX(), ghost.getY());
+            drawGhost(g,
+                    interpolate(ghost.getPrevX(), ghost.getX(), stepProgress),
+                    interpolate(ghost.getPrevY(), ghost.getY(), stepProgress));
         }
         PacMan pacman = engine.getPacman();
-        drawPacman(g, pacman.getX(), pacman.getY(), pacman.getDirection());
+        drawPacman(g,
+                interpolate(pacman.getPrevX(), pacman.getX(), stepProgress),
+                interpolate(pacman.getPrevY(), pacman.getY(), stepProgress),
+                pacman.getDirection());
     }
 
     private void drawTile(Graphics g, int column, int row, CellType cell) {
@@ -122,9 +140,10 @@ public class GamePanel extends JPanel {
         }
     }
 
-    private void drawPacman(Graphics g, int column, int row, Directions direction) {
-        int pixelX = column * TILE + 2;
-        int pixelY = HUD + row * TILE + 2;
+    /** mazeX, mazeY: the top-left corner of Pac-Man's tile in pixels, measured from the maze, not the panel. */
+    private void drawPacman(Graphics g, int mazeX, int mazeY, Directions direction) {
+        int pixelX = mazeX + 2;
+        int pixelY = HUD + mazeY + 2;
         g.setColor(Color.YELLOW);
         int startAngle = switch (direction) {
             case RIGHT -> 45;
@@ -137,9 +156,10 @@ public class GamePanel extends JPanel {
         g.fillArc(pixelX, pixelY, TILE - 4, TILE - 4, startAngle, arc);
     }
 
-    private void drawGhost(Graphics g, int column, int row) {
-        int pixelX = column * TILE + 2;
-        int pixelY = HUD + row * TILE + 2;
+    /** mazeX, mazeY: the top-left corner of the ghost's tile in pixels, measured from the maze, not the panel. */
+    private void drawGhost(Graphics g, int mazeX, int mazeY) {
+        int pixelX = mazeX + 2;
+        int pixelY = HUD + mazeY + 2;
         g.setColor(Color.RED);
         g.fillOval(pixelX, pixelY, TILE - 4, TILE - 4);
     }
