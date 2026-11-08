@@ -7,6 +7,7 @@ import java.util.Random;
 
 import hu.bme.enums.CellType;
 import hu.bme.enums.Directions;
+import hu.bme.enums.GhostPersonality;
 import hu.bme.enums.GhostState;
 
 /**
@@ -17,11 +18,16 @@ import hu.bme.enums.GhostState;
 public class GameEngine implements Serializable {
 
     public static final int DOT_SCORE = 10;
+    public static final int POWERPELLET_SCORE = 50;
     public static final int TICKS_PER_SECOND = 60; // 60 frames per second
     public static final int TICKS_PER_STEP = 10; // 60/10 = 6 cells every second
+    /** A frightened ghost moves only on every 2nd step, so it is half as fast as Pac-Man. */
+    public static final int FRIGHTENED_STEP_INTERVAL = 2;
 
     /** how many ticks since the last step: [0 - TICKS_PER_STEP -1]*/
     private int tickInStep; 
+    /** How many steps the game has taken; frightened ghosts use it to skip steps. */
+    private int stepCount;
 
     private int score;
     private int lives;
@@ -76,9 +82,18 @@ public class GameEngine implements Serializable {
 
     /** Movement of 1 cell*/
     public void step() {
+        if(isGameOver()) { return;}
+        stepCount++;
         pacman.processInput();
         stepIfOpen(pacman);
         for (Ghost ghost : ghosts) {
+            // A frightened ghost sits out every other step, so it moves at half speed.
+            // It still has to remember its position: otherwise prev would point to an old tile,
+            // the panel would replay the last slide, and the swap check would compare stale tiles.
+            if (ghost.getState() == GhostState.FRIGHTENED && stepCount % FRIGHTENED_STEP_INTERVAL != 0) {
+                ghost.rememberPosition();
+                continue;
+            }
             ghost.chooseDirection(map, random);
             stepIfOpen(ghost);
         }
@@ -110,8 +125,19 @@ public class GameEngine implements Serializable {
     }
 
     public void checkCollisions() {
+
+        // When Pacman goes through a dot
         if (map.getCell(pacman.getX(), pacman.getY()) == CellType.DOT) {
             score += DOT_SCORE;
+            map.setCell(pacman.getX(), pacman.getY(), CellType.EMPTY);
+        }
+
+        // When Pacman goes through a power pellet (orb)
+        if (map.getCell(pacman.getX(), pacman.getY()) == CellType.POWERPELLET) {
+            score += POWERPELLET_SCORE;
+            for(Ghost ghost : ghosts) {
+                ghost.frighten();
+            }
             map.setCell(pacman.getX(), pacman.getY(), CellType.EMPTY);
         }
 
@@ -132,6 +158,11 @@ public class GameEngine implements Serializable {
             ghost.resetToStart();
         }
 
+    }
+
+    public boolean isGameOver() {
+        if(lives <= 0) return true;
+        else return false;
     }
 
     /**Return double between 0.0 and 1.0 (progress of step) */

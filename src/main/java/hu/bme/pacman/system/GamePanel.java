@@ -14,6 +14,7 @@ import javax.swing.Timer;
 
 import hu.bme.enums.CellType;
 import hu.bme.enums.Directions;
+import hu.bme.enums.GhostState;
 import hu.bme.pacman.game.GameEngine;
 import hu.bme.pacman.game.Ghost;
 import hu.bme.pacman.game.Labyrinth;
@@ -100,6 +101,10 @@ public class GamePanel extends JPanel {
         super.paintComponent(g);
         g.setColor(Color.WHITE);
         g.drawString("Score: " + engine.getScore() + "    Lives: " + engine.getLives(), 12, 24);
+        if (engine.isGameOver()) {
+            g.setColor(Color.RED);
+            g.drawString("GAME OVER", 300, 24);
+        }
 
         Labyrinth map = engine.getMap();
         for (int y = 0; y < map.getHeight(); y++) {
@@ -110,7 +115,8 @@ public class GamePanel extends JPanel {
         for (Ghost ghost : engine.getGhosts()) {
             drawGhost(g,
                     interpolate(ghost.getPrevX(), ghost.getX(), stepProgress),
-                    interpolate(ghost.getPrevY(), ghost.getY(), stepProgress));
+                    interpolate(ghost.getPrevY(), ghost.getY(), stepProgress),
+                    ghost.getState());
         }
         PacMan pacman = engine.getPacman();
         drawPacman(g,
@@ -157,10 +163,11 @@ public class GamePanel extends JPanel {
     }
 
     /** mazeX, mazeY: the top-left corner of the ghost's tile in pixels, measured from the maze, not the panel. */
-    private void drawGhost(Graphics g, int mazeX, int mazeY) {
+    private void drawGhost(Graphics g, int mazeX, int mazeY, GhostState state) {
         int pixelX = mazeX + 2;
         int pixelY = HUD + mazeY + 2;
-        g.setColor(Color.RED);
+        // A frightened ghost is white, so the player sees it can be eaten
+        g.setColor(state == GhostState.FRIGHTENED ? Color.WHITE : Color.RED);
         g.fillOval(pixelX, pixelY, TILE - 4, TILE - 4);
     }
 

@@ -55,13 +55,20 @@ public class Ghost extends GameObject {
         int nextX = x;
         int nextY = y;
         switch (d) {
-            case UP -> nextY -= speed;
-            case DOWN -> nextY += speed;
-            case LEFT -> nextX -= speed;
-            case RIGHT -> nextX += speed;
-            case IDLE -> {
+            case UP:
+                nextY -= speed;
+                break;
+            case DOWN: 
+                nextY += speed;
+                break;
+            case LEFT:
+                nextX -= speed;
+                break;
+            case RIGHT:
+                nextX += speed;
+                break;
+            case IDLE:
                 return false; // idle is not a step
-            }
         }
         return map.isWalkable(nextX, nextY);
     }
@@ -89,7 +96,23 @@ public class Ghost extends GameObject {
     }
 
 
-    public void updateState() {
+    /**
+     * Pac-Man ate a power pellet: the ghost becomes FRIGHTENED.
+     * A DEAD ghost is not affected.
+     * On the first fright the ghost turns around; this is the only allowed 180-degree turn,
+     * and it shows the player that something happened. An already frightened ghost keeps its way,
+     * otherwise every new pellet would jerk it back and forth.
+     * Moving slower is the engine's job (see GameEngine.step), not a change of speed:
+     * 
+     */
+    public void frighten() {
+        if (state == GhostState.DEAD) {
+            return;
+        }
+        if (state != GhostState.FRIGHTENED) {
+            direction = direction.opposite();
+        }
+        state = GhostState.FRIGHTENED;
     }
 
     public GhostState getState() {
