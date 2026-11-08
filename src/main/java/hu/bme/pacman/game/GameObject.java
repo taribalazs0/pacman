@@ -16,7 +16,9 @@ public abstract class GameObject implements Serializable {
     protected int speed;
     protected Directions direction;
 
-    
+    // Start tiles to get back to after a hit (life loss)
+    private final int startX;
+    private final int startY;
 
     // previous cell of a character
     private int prevX;
@@ -25,6 +27,8 @@ public abstract class GameObject implements Serializable {
     protected GameObject(int x, int y, int speed, Directions direction) {
         this.prevX = x;
         this.prevY = y;
+        this.startX = x;
+        this.startY = y;
         this.x = x;
         this.y = y;
         this.speed = speed;
@@ -48,6 +52,17 @@ public abstract class GameObject implements Serializable {
             case IDLE -> {
             }
         }
+    }
+
+    /**Puts the object back on its start tile, standing still. We do not reset the maze*/
+    public void resetToStart() {
+        this.x = startX;
+        this.y = startY;
+
+        this.prevX = startX;
+        this.prevY = startY;
+
+        this.direction = Directions.IDLE;
     }
 
     public int getX() {

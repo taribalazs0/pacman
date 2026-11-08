@@ -23,4 +23,11 @@ public class PacMan extends GameObject {
             currentCommand.execute();
         }
     }
+
+    /**Back to the start tile, standing still, with no buffered command.*/
+    @Override 
+    public void resetToStart() {
+        super.resetToStart();
+        currentCommand = null;
+    }
 }

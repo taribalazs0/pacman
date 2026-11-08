@@ -117,10 +117,21 @@ public class GameEngine implements Serializable {
 
         for(Ghost ghost : ghosts) {
             if(collidesWith(ghost)) {
-                // test
-                System.out.println("Hit: " + ghost.getPersonality());
+                loseLife();
+                break;
             }
         }
+    }
+
+    /**What happens after you collide with a ghost */
+    private void loseLife() {
+        lives--;
+        pacman.resetToStart();
+
+        for(Ghost ghost : ghosts) {
+            ghost.resetToStart();
+        }
+
     }
 
     /**Return double between 0.0 and 1.0 (progress of step) */
