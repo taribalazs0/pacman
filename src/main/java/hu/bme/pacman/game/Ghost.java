@@ -103,7 +103,7 @@ public class Ghost extends GameObject {
      * and it shows the player that something happened. An already frightened ghost keeps its way,
      * otherwise every new pellet would jerk it back and forth.
      * Moving slower is the engine's job (see GameEngine.step), not a change of speed:
-     * 
+     * speed counts whole tiles per step
      */
     public void frighten() {
         if (state == GhostState.DEAD) {
@@ -113,6 +113,27 @@ public class Ghost extends GameObject {
             direction = direction.opposite();
         }
         state = GhostState.FRIGHTENED;
+    }
+
+    /** Pair of frighten(). The ghost goes back to CHASE */
+    public void calmDown() {
+        if(state != GhostState.FRIGHTENED) { return; }
+        state = GhostState.CHASE;
+    }
+
+     /**Back to the start tile (ghosthouse), standing still.*/
+    @Override 
+    public void resetToStart() {
+        super.resetToStart();
+        state = GhostState.CHASE;
+    }
+
+    /**After a ghost gets eaten in FRIGHTENED state
+     * 
+     */
+    public void eaten() {
+        if(state != GhostState.FRIGHTENED) { return; }
+        state = GhostState.DEAD;
     }
 
     public GhostState getState() {

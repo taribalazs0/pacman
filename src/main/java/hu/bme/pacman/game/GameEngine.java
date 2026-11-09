@@ -28,6 +28,9 @@ public class GameEngine implements Serializable {
     private int tickInStep; 
     /** How many steps the game has taken; frightened ghosts use it to skip steps. */
     private int stepCount;
+    /** How many steps the FRIGHTENED state still lasts; 0 means no ghost is frightened by the timer.
+     *  A power pellet sets it to frightenedDurationSteps(). */
+    private int frightenedStepsLeft;
 
     private int score;
     private int lives;
@@ -83,6 +86,17 @@ public class GameEngine implements Serializable {
     /** Movement of 1 cell*/
     public void step() {
         if(isGameOver()) { return;}
+
+        // If ghosts are in a frightened state, lower the steps left, if it is zero, they go back to chase
+        if(frightenedStepsLeft > 0) {
+            frightenedStepsLeft--;
+            if(frightenedStepsLeft == 0) {
+                for(Ghost ghost : ghosts) {
+                    ghost.calmDown();
+                }
+            }
+        }
+
         stepCount++;
         pacman.processInput();
         stepIfOpen(pacman);
@@ -119,6 +133,29 @@ public class GameEngine implements Serializable {
         return false;
     }
 
+    /**
+     * How long the FRIGHTENED state lasts on the current level, in steps (one step = one tile of movement).
+     * level 1-3: 6 s, level 4-6: 4 s, level 7-10: 2 s, level 11+: 1 s.
+     * The table is in seconds because that is how the rules are written; the result is converted
+     * to steps with TICKS_PER_SECOND and TICKS_PER_STEP (1 s = 60 / 10 = 6 steps, so 6 s = 36 steps).
+     */
+    private int frightenedDurationSteps() {
+        if (currentLevel <= 0) {
+            throw new IllegalStateException("Level can not be negative or zero: " + currentLevel);
+        }
+        int seconds;
+        if (currentLevel <= 3) {
+            seconds = 6;
+        } else if (currentLevel <= 6) {
+            seconds = 4;
+        } else if (currentLevel <= 10) {
+            seconds = 2;
+        } else {
+            seconds = 1;
+        }
+        return seconds * TICKS_PER_SECOND / TICKS_PER_STEP;
+    }
+
     /** A tile is the same only if both the column and the row match. */
     private static boolean sameTile(int x1, int y1, int x2, int y2) {
         return x1 == x2 && y1 == y2;
@@ -139,6 +176,7 @@ public class GameEngine implements Serializable {
                 ghost.frighten();
             }
             map.setCell(pacman.getX(), pacman.getY(), CellType.EMPTY);
+            frightenedStepsLeft = frightenedDurationSteps();
         }
 
         for(Ghost ghost : ghosts) {
@@ -157,6 +195,9 @@ public class GameEngine implements Serializable {
         for(Ghost ghost : ghosts) {
             ghost.resetToStart();
         }
+
+        // After you die, every ghost goes out of FRIGhtENED
+        frightenedStepsLeft = 0;
 
     }
 

@@ -12,6 +12,8 @@
 \usepackage{tikz} % Added for the FSM diagram
 \usetikzlibrary{shapes.multipart, positioning, arrows.meta} % Added for UML Diagram
 \usepackage[colorlinks=true, linkcolor=black, urlcolor=blue]{hyperref}
+% Long \texttt names cannot be hyphenated; allow a little extra word spacing instead of running into the margin
+\setlength{\emergencystretch}{3em}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -292,7 +294,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + computeTarget(...): void
         };
 
-        \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.2cm, fill=yellow!10] (StrategyNote) at (9.6, -20.5) {
+        \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.8cm, fill=yellow!10] (StrategyNote) at (9.6, -20.5) {
             Implemented by (all \guillemotleft Serializable\guillemotright): \\
             TrackerStrategy, AmbusherStrategy, \\
             WandererStrategy, ChaoticStrategy \\
@@ -355,7 +357,7 @@ The software's graphical user interface is built using the Java Swing framework,
         \draw[dashed, -{Triangle[open, fill=white, scale=1.2]}, thick] (MoveCommand.north) -- (Command.south);
 
         % LevelData: LevelManager creates it, GameEngine is built from it
-        \draw[dashed, ->, thick] (LevelManager.east) -- ++(0.3, 0) |- (LevelData.east) node[pos=0.25, right, font=\sffamily\scriptsize] {\guillemotleft create\guillemotright};
+        \draw[dashed, ->, thick] (LevelManager.east) -- ++(0.3, 0) |- (LevelData.east) node[pos=0.25, left, font=\sffamily\scriptsize] {\guillemotleft create\guillemotright};
         \draw[dashed, ->, thick] (GameEngine.south east) -- (LevelData.north west) node[midway, above right, font=\sffamily\scriptsize] {\guillemotleft use\guillemotright};
 
         % Strategy pattern: the ghost owns its strategy object
