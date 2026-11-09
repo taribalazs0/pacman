@@ -52,25 +52,28 @@ public class Ghost extends GameObject {
 
     /** Whether the tile one step away in direction d is walkable. */
     private boolean canStep(Labyrinth map, Directions d) {
-        int nextX = x;
-        int nextY = y;
-        switch (d) {
-            case UP:
-                nextY -= speed;
-                break;
-            case DOWN: 
-                nextY += speed;
-                break;
-            case LEFT:
-                nextX -= speed;
-                break;
-            case RIGHT:
-                nextX += speed;
-                break;
-            case IDLE:
-                return false; // idle is not a step
+        if (d == Directions.IDLE) {
+            return false; // idle is not a step
         }
-        return map.isWalkable(nextX, nextY);
+        return map.isWalkable(nextX(d), nextY(d));
+    }
+
+    /** The column of the tile one step away in direction d. */
+    private int nextX(Directions d) {
+        return switch (d) {
+            case LEFT -> x - speed;
+            case RIGHT -> x + speed;
+            default -> x;
+        };
+    }
+
+    /** The row of the tile one step away in direction d. */
+    private int nextY(Directions d) {
+        return switch (d) {
+            case UP -> y - speed;
+            case DOWN -> y + speed;
+            default -> y;
+        };
     }
 
     /**
@@ -95,6 +98,40 @@ public class Ghost extends GameObject {
         direction = options.get(random.nextInt(options.size()));
     }
 
+    /**
+     * Picks, from possibleDirections, the direction whose next tile is closest to the target tile,
+     * and turns the ghost that way (greedy choice: best-looking step now).
+     * Distance is the squared straight-line distance; the square root is skipped because
+     * it does not change which one is smaller. On a tie the earlier direction in the list wins.
+     */
+    public void chooseDirectionTowards(Labyrinth map, int targetX, int targetY) {
+        this.targetX = targetX;
+        this.targetY = targetY;
+
+        List<Directions> options = possibleDirections(map);
+        if (options.isEmpty()) {
+            direction = Directions.IDLE;
+            return;
+        }
+
+        // Start from the first option, so best always has a value
+        Directions best = options.get(0);
+        // MAX_VALUE, so the first distance we compute is smaller
+        int bestDistance = Integer.MAX_VALUE;
+
+        for (Directions d : options) {
+            int dx = nextX(d) - targetX;
+            int dy = nextY(d) - targetY;
+            int distance = dx * dx + dy * dy;
+
+            // On a tie the earlier direction stays
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = d;
+            }
+        }
+        direction = best;
+    }
 
     /**
      * Pac-Man ate a power pellet: the ghost becomes FRIGHTENED.
@@ -128,8 +165,23 @@ public class Ghost extends GameObject {
         state = GhostState.CHASE;
     }
 
-    /**After a ghost gets eaten in FRIGHTENED state
-     * 
+    /**Ghost goes back to Ghost house*/
+    public void respawn() {
+        if(getState() != GhostState.DEAD) {
+            return;
+        }
+
+        // Not home yet if EITHER the column OR the row differs (De Morgan: !(a && b) == !a || !b)
+        if (getX() != getStartX() || getY() != getStartY()) {
+            return;
+        }
+
+        state = GhostState.CHASE;
+        direction = Directions.IDLE;
+    }
+
+    /**After a ghost gets eaten in FRIGHTENED state.
+     * Pac-Man ate this frightened ghost: it becomes DEAD. Ghosts in any other state are not affected
      */
     public void eaten() {
         if(state != GhostState.FRIGHTENED) { return; }

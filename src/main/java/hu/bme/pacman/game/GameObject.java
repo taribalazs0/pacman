@@ -85,6 +85,14 @@ public abstract class GameObject implements Serializable {
         return prevY;
     }
 
+    public int getStartX() {
+        return startX;
+    }
+
+    public int getStartY() {
+        return startY;
+    }
+
     public Directions getDirection() {
         return direction;
     }

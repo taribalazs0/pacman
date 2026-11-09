@@ -18,12 +18,15 @@ import hu.bme.enums.GhostState;
 public class GameEngine implements Serializable {
 
     public static final int DOT_SCORE = 10;
+    public static final int GHOST_SCORE = 200;
     public static final int POWERPELLET_SCORE = 50;
     public static final int TICKS_PER_SECOND = 60; // 60 frames per second
     public static final int TICKS_PER_STEP = 10; // 60/10 = 6 cells every second
     /** A frightened ghost moves only on every 2nd step, so it is half as fast as Pac-Man. */
     public static final int FRIGHTENED_STEP_INTERVAL = 2;
 
+    /**Number of ghosts eaten by pacman in a single, same FRIGHTENED state */
+    private int ghostsEatenInFright = 0;
     /** how many ticks since the last step: [0 - TICKS_PER_STEP -1]*/
     private int tickInStep; 
     /** How many steps the game has taken; frightened ghosts use it to skip steps. */
@@ -108,8 +111,17 @@ public class GameEngine implements Serializable {
                 ghost.rememberPosition();
                 continue;
             }
-            ghost.chooseDirection(map, random);
+            if (ghost.getState() == GhostState.DEAD) {
+                // The eyes head straight home to the ghost's start tile in the Ghost House
+                ghost.chooseDirectionTowards(map, ghost.getStartX(), ghost.getStartY());
+            } else {
+                // Everyone else still wanders randomly until the personality strategies exist
+                ghost.chooseDirection(map, random);
+            }
             stepIfOpen(ghost);
+
+            // After the step: a DEAD ghost that has just reached home becomes CHASE again
+            ghost.respawn();
         }
         checkCollisions();
     }
@@ -177,14 +189,39 @@ public class GameEngine implements Serializable {
             }
             map.setCell(pacman.getX(), pacman.getY(), CellType.EMPTY);
             frightenedStepsLeft = frightenedDurationSteps();
+            // A new pellet starts a new series: the next eaten ghost is worth 200 again
+            ghostsEatenInFright = 0;
         }
 
-        for(Ghost ghost : ghosts) {
-            if(collidesWith(ghost)) {
-                loseLife();
-                break;
+        // Two passes, so the result does not depend on the order of the ghosts in the list:
+        // first Pac-Man eats every frightened ghost he met (no break: he can eat two in one step) ...
+        for (Ghost ghost : ghosts) {
+            if (collidesWith(ghost) && ghost.getState() == GhostState.FRIGHTENED) {
+                eatGhost(ghost);
             }
         }
+        // ... then any other ghost he met kills him. DEAD ghosts are harmless.
+        // Ghosts eaten above are DEAD by now, so they are skipped here too.
+        for (Ghost ghost : ghosts) {
+            if (collidesWith(ghost) && ghost.getState() != GhostState.DEAD) {
+                loseLife();
+                break; // at most one life per step
+            }
+        }
+    }
+
+    /**
+     * Pair of loseLife(): Pac-Man ate a frightened ghost.
+     * Within one fright the ghosts are worth 200, 400, 800, 1600 points (200 * 2^n,
+     * where n is how many ghosts were already eaten since the last pellet), never more than 1600.
+     */
+    private void eatGhost(Ghost ghost) {
+        ghost.eaten();
+        // 1 << n shifts the 1 bit left n times, giving 2^n (1, 2, 4, 8).
+        // Math.min keeps n at most 3, so on a custom map with more ghosts the 5th one is still 1600.
+        int doublings = Math.min(ghostsEatenInFright, 3);
+        score += GHOST_SCORE * (1 << doublings);
+        ghostsEatenInFright++;
     }
 
     /**What happens after you collide with a ghost */
