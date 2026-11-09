@@ -24,4 +24,22 @@ public enum Directions {
             default: return IDLE;
         }
     }
+
+    /** How the column changes in one step this way: -1 left, +1 right, 0 otherwise. */
+    public int dx() {
+        return switch (this) {
+            case LEFT -> -1;
+            case RIGHT -> 1;
+            case UP, DOWN, IDLE -> 0;
+        };
+    }
+
+    /** How the row changes in one step this way: -1 up (rows grow downwards), +1 down, 0 otherwise. */
+    public int dy() {
+        return switch (this) {
+            case UP -> -1;
+            case DOWN -> 1;
+            case LEFT, RIGHT, IDLE -> 0;
+        };
+    }
 }

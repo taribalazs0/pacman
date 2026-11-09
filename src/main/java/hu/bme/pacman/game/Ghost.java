@@ -16,6 +16,8 @@ public class Ghost extends GameObject {
     private GhostPersonality personality;
     private int targetX;
     private int targetY;
+    /** How this ghost picks its chase target (Strategy pattern); null while its personality has none yet. */
+    private GhostStrategy strategy;
 
     public Ghost(int x, int y, GhostPersonality personality) {
         super(x, y, 1, Directions.IDLE);
@@ -23,6 +25,31 @@ public class Ghost extends GameObject {
         this.personality = personality;
         this.targetX = x;
         this.targetY = y;
+        this.strategy = strategyFor(personality);
+    }
+
+    /**
+     * The personality decides which strategy object the ghost gets.
+     * Only AMBUSHER has one so far; the others return null and keep wandering randomly.
+     */
+    private static GhostStrategy strategyFor(GhostPersonality personality) {
+        return switch (personality) {
+            case AMBUSHER -> new AmbusherStrategy();
+            case TRACKER, WANDERER, CHAOTIC -> null; // TODO: their strategies come next
+        };
+    }
+
+    /**
+     * One chasing decision: ask the strategy for a target tile, then step towards it.
+     * A ghost without a strategy yet falls back to the random choice.
+     */
+    public void chooseChaseDirection(Labyrinth map, PacMan pacman, Random random) {
+        if (strategy == null) {
+            chooseDirection(map, random);
+            return;
+        }
+        Tile target = strategy.target(this, pacman, map);
+        chooseDirectionTowards(map, target.x(), target.y());
     }
 
     /** This decides about the possible tiles a ghost can move to

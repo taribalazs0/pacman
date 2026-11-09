@@ -14,6 +14,7 @@ import javax.swing.Timer;
 
 import hu.bme.enums.CellType;
 import hu.bme.enums.Directions;
+import hu.bme.enums.GhostPersonality;
 import hu.bme.enums.GhostState;
 import hu.bme.pacman.game.GameEngine;
 import hu.bme.pacman.game.Ghost;
@@ -116,7 +117,8 @@ public class GamePanel extends JPanel {
             drawGhost(g,
                     interpolate(ghost.getPrevX(), ghost.getX(), stepProgress),
                     interpolate(ghost.getPrevY(), ghost.getY(), stepProgress),
-                    ghost.getState());
+                    ghost.getState(),
+                    ghost.getPersonality());
         }
         PacMan pacman = engine.getPacman();
         drawPacman(g,
@@ -162,13 +164,43 @@ public class GamePanel extends JPanel {
         g.fillArc(pixelX, pixelY, TILE - 4, TILE - 4, startAngle, arc);
     }
 
-    /** mazeX, mazeY: the top-left corner of the ghost's tile in pixels, measured from the maze, not the panel. */
-    private void drawGhost(Graphics g, int mazeX, int mazeY, GhostState state) {
-        int pixelX = mazeX + 2;
-        int pixelY = HUD + mazeY + 2;
-        // A frightened ghost is white, so the player sees it can be eaten
-        g.setColor(state == GhostState.FRIGHTENED ? Color.WHITE : Color.RED);
-        g.fillOval(pixelX, pixelY, TILE - 4, TILE - 4);
+    /** Size of a DEAD ghost's "eyes" in pixels. */
+    private static final int EYES = 10;
+
+    /**
+     * mazeX, mazeY: the top-left corner of the ghost's tile in pixels, measured from the maze, not the panel.
+     * The state wins over the personality: a frightened ghost is white whatever its colour,
+     * and a DEAD ghost is only a small grey dot (its eyes) hurrying home.
+     */
+    private void drawGhost(Graphics g, int mazeX, int mazeY, GhostState state, GhostPersonality personality) {
+        switch (state) {
+            case FRIGHTENED -> {
+                // White, so the player sees it can be eaten
+                g.setColor(Color.WHITE);
+                g.fillOval(mazeX + 2, HUD + mazeY + 2, TILE - 4, TILE - 4);
+            }
+            case DEAD -> {
+                // Centre of the tile minus half the dot, so the dot sits in the middle
+                g.setColor(Color.LIGHT_GRAY);
+                g.fillOval(mazeX + TILE / 2 - EYES / 2, HUD + mazeY + TILE / 2 - EYES / 2, EYES, EYES);
+            }
+            default -> {
+                g.setColor(colorOf(personality));
+                g.fillOval(mazeX + 2, HUD + mazeY + 2, TILE - 4, TILE - 4);
+            }
+        }
+    }
+
+    /**
+     * The colour of each personality.
+     */
+    private static Color colorOf(GhostPersonality personality) {
+        return switch (personality) {
+            case TRACKER -> Color.RED;
+            case AMBUSHER -> Color.PINK;
+            case WANDERER -> Color.ORANGE;
+            case CHAOTIC -> Color.CYAN;
+        };
     }
 
     /**

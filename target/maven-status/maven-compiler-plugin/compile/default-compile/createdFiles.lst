@@ -7,8 +7,10 @@ hu\bme\enums\GhostState.class
 hu\bme\pacman\game\GameEngine.class
 hu\bme\pacman\game\LevelData.class
 hu\bme\pacman\game\Command.class
+hu\bme\pacman\game\Tile.class
 hu\bme\pacman\game\Main.class
 hu\bme\pacman\system\LevelManager.class
+hu\bme\pacman\game\GhostStrategy.class
 hu\bme\pacman\system\GamePanel$1.class
 hu\bme\pacman\system\MainMenu.class
 hu\bme\pacman\game\GameEngine$1.class
@@ -22,4 +24,5 @@ hu\bme\pacman\game\Labyrinth.class
 hu\bme\pacman\system\GamePanel$2.class
 hu\bme\pacman\game\Ghost$1.class
 hu\bme\enums\GhostPersonality.class
+hu\bme\pacman\game\AmbusherStrategy.class
 hu\bme\pacman\game\PacMan.class

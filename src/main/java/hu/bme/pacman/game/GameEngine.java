@@ -111,12 +111,13 @@ public class GameEngine implements Serializable {
                 ghost.rememberPosition();
                 continue;
             }
-            if (ghost.getState() == GhostState.DEAD) {
+            switch (ghost.getState()) {
                 // The eyes head straight home to the ghost's start tile in the Ghost House
-                ghost.chooseDirectionTowards(map, ghost.getStartX(), ghost.getStartY());
-            } else {
-                // Everyone else still wanders randomly until the personality strategies exist
-                ghost.chooseDirection(map, random);
+                case DEAD -> ghost.chooseDirectionTowards(map, ghost.getStartX(), ghost.getStartY());
+                // A frightened ghost flees randomly
+                case FRIGHTENED -> ghost.chooseDirection(map, random);
+                // CHASE (and SCATTER until it exists): the personality's strategy picks the target
+                default -> ghost.chooseChaseDirection(map, pacman, random);
             }
             stepIfOpen(ghost);
 
