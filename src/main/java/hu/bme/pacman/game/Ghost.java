@@ -30,18 +30,18 @@ public class Ghost extends GameObject {
 
     /**
      * The personality decides which strategy object the ghost gets.
-     * Only AMBUSHER has one so far; the others return null and keep wandering randomly.
      */
     private static GhostStrategy strategyFor(GhostPersonality personality) {
         return switch (personality) {
             case AMBUSHER -> new AmbusherStrategy();
-            case TRACKER, WANDERER, CHAOTIC -> null; // TODO: their strategies come next
+            case TRACKER -> new TrackerStrategy();
+            case WANDERER, CHAOTIC -> null; // TODO: their strategies come next
         };
     }
 
     /**
      * One chasing decision: ask the strategy for a target tile, then step towards it.
-     * A ghost without a strategy yet falls back to the random choice.
+     * A ghost without a strategy yet falls back to tFhe random choice.
      */
     public void chooseChaseDirection(Labyrinth map, PacMan pacman, Random random) {
         if (strategy == null) {

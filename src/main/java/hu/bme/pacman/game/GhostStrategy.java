@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * Strategy pattern: how one ghost personality picks its target tile while chasing.
- * The ghost holds one as a field (composition), so the CHAOTIC ghost can swap it at runtime.
+ * The ghost holds one as a field, so the CHAOTIC ghost can swap it at runtime.
  * Serializable, because every ghost is saved together with its strategy.
  * A strategy only says WHERE to go; Ghost.chooseDirectionTowards decides HOW to get closer.
  */
