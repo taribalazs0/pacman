@@ -11,9 +11,9 @@ import java.io.Serializable;
 public interface GhostStrategy extends Serializable {
 
     /**
-     * @param self   the ghost asking (WANDERER needs its own position)
+     * @param self   the ghost asking (WANDERER needs its own position and its start tile in the Ghost House)
      * @param pacman Pac-Man, with his tile and direction
-     * @param map    the maze (for its size, e.g. to find a corner)
+     * @param map    the maze (no strategy needs it yet, but later ones may, e.g. for its size)
      * @return the tile the ghost should head for
      */
     Tile target(Ghost self, PacMan pacman, Labyrinth map);

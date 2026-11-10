@@ -35,13 +35,14 @@ public class Ghost extends GameObject {
         return switch (personality) {
             case AMBUSHER -> new AmbusherStrategy();
             case TRACKER -> new TrackerStrategy();
-            case WANDERER, CHAOTIC -> null; // TODO: their strategies come next
+            case WANDERER -> new WandererStrategy(); 
+            case CHAOTIC -> new ChaoticStrategy();
         };
     }
 
     /**
      * One chasing decision: ask the strategy for a target tile, then step towards it.
-     * A ghost without a strategy yet falls back to tFhe random choice.
+     * Every personality has a strategy now; the random fallback only stays as a safety net for a ghost without one.
      */
     public void chooseChaseDirection(Labyrinth map, PacMan pacman, Random random) {
         if (strategy == null) {

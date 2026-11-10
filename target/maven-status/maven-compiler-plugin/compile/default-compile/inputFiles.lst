@@ -3,6 +3,7 @@ C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\b
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\enums\GhostPersonality.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\enums\GhostState.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\AmbusherStrategy.java
+C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\ChaoticStrategy.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\Command.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\GameEngine.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\GameObject.java
@@ -15,6 +16,7 @@ C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\b
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\PacMan.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\Tile.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\TrackerStrategy.java
+C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\game\WandererStrategy.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\system\GamePanel.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\system\LevelManager.java
 C:\Users\skyba\Desktop\BME\Bsc\3.felev\ProgramozasAlapjai3\HF\src\main\java\hu\bme\pacman\system\MainFrame.java

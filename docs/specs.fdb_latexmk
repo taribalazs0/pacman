@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1794257599.579 "c:/Users/skyba/Desktop/BME/Bsc/3.felev/ProgramozasAlapjai3/HF/docs/specs.tex" "specs.pdf" "specs" 1794257610.4305 0
+["pdflatex"] 1794350414.84839 "c:/Users/skyba/Desktop/BME/Bsc/3.felev/ProgramozasAlapjai3/HF/docs/specs.tex" "specs.pdf" "specs" 1794350420.85428 0
   "C:/Users/skyba/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1794176426 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/skyba/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1764495780 24225047 eff35376bc0f8143d2f53aff660eedbf ""
   "C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc" 1256929440 2375 baa924870cfb487815765f9094cf3728 ""
@@ -192,11 +192,11 @@
   "C:/Users/skyba/AppData/Local/Programs/MiKTeX/tex/latex/rerunfilecheck/rerunfilecheck.sty" 1751104012 9684 a33a14b82ce60d6e77cb9be689d79ee6 ""
   "C:/Users/skyba/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/skyba/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1700127522 55487 80a65caedd3722f4c20a14a69e785d8f ""
-  "c:/Users/skyba/Desktop/BME/Bsc/3.felev/ProgramozasAlapjai3/HF/docs/specs.tex" 1794257590 43917 ba2451bd24f9deb2f3a679a2418a48a4 ""
-  "specs.aux" 1794257608 1941 fd57fea90fca6463c18bbb1abfc51fa5 "pdflatex"
-  "specs.out" 1794257608 1263 a77bfa467566c36ffb26ce621b611449 "pdflatex"
-  "specs.tex" 1794257590 43917 ba2451bd24f9deb2f3a679a2418a48a4 ""
-  "specs.toc" 1794257608 662 a6830530d93f1a49f349ae5dca140140 "pdflatex"
+  "c:/Users/skyba/Desktop/BME/Bsc/3.felev/ProgramozasAlapjai3/HF/docs/specs.tex" 1794350407 44766 c3021338bc5059b89c0280ecb6e3c65c ""
+  "specs.aux" 1794350419 1941 fd57fea90fca6463c18bbb1abfc51fa5 "pdflatex"
+  "specs.out" 1794350419 1263 a77bfa467566c36ffb26ce621b611449 "pdflatex"
+  "specs.tex" 1794350407 44766 c3021338bc5059b89c0280ecb6e3c65c ""
+  "specs.toc" 1794350419 662 a6830530d93f1a49f349ae5dca140140 "pdflatex"
   (generated)
   "specs.aux"
   "specs.log"

@@ -7,8 +7,8 @@ package hu.bme.pacman.game;
 public class TrackerStrategy implements GhostStrategy {
     @Override 
     public Tile target(Ghost self, PacMan pacman, Labyrinth map) {
-        int x = pacman.getX() + pacman.getDirection().dx();
-        int y = pacman.getY() + pacman.getDirection().dy();
+        int x = pacman.getX();
+        int y = pacman.getY();
         return new Tile(x, y);
     }
 
