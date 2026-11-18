@@ -7,7 +7,9 @@ import hu.bme.enums.Directions;
  * when the engine asks. Pac-Man is not itself a command.
  */
 public class PacMan extends GameObject {
-    private Command currentCommand;
+    // transient: when making an bytestream from this object (serializing) java skips this attribute.
+    // after loading this will be null.
+    private transient Command currentCommand;
 
     public PacMan(int x, int y) {
         super(x, y, 1, Directions.IDLE);

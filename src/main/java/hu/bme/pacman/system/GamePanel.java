@@ -10,6 +10,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -54,12 +55,27 @@ public class GamePanel extends JPanel {
         /* Loading the map: Original, or edited */
         Labyrinth map = engine.getMap();
 
+        int panelWidth = map.getWidth() * TILE;
+        setPreferredSize(new Dimension(panelWidth, map.getHeight() * TILE + HUD));
 
-        setPreferredSize(new Dimension(map.getWidth() * TILE, map.getHeight() * TILE + HUD));
+        // ARCHITECTURE DECISION: paintComponent only draws (Score/Lives/Level text, the maze,
+        // the actors); a real, clickable JButton cannot be drawn with Graphics, it has to be an
+        // actual child component. setLayout(null) switches this panel to absolute positioning,
+        // so the SAVE button can sit in a fixed pixel spot inside the HUD strip without a
+        // layout manager fighting the fixed-size drawing beneath it.
+        setLayout(null);
+        JButton saveBtn = new JButton("SAVE");
+        saveBtn.setBounds(panelWidth - 70, 4, 60, HUD - 8);
+        saveBtn.addActionListener(event -> saveGame());
+        add(saveBtn);
 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent event) {
+                if (event.getKeyCode() == KeyEvent.VK_F5) {
+                    saveGame();
+                    return;
+                }
                 Directions chosen = switch (event.getKeyCode()) {
                     case KeyEvent.VK_W -> Directions.UP;
                     case KeyEvent.VK_S -> Directions.DOWN;
@@ -103,6 +119,22 @@ public class GamePanel extends JPanel {
         HighscoreEntry entry = new HighscoreEntry(playerName, engine.getScore(), LocalDate.now());
         try {
             LevelManager.appendHighscore(LevelManager.HIGHSCORES_FILE, entry);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Saves the running game to GameEngine.SAVE_FILE. Both the F5 key and the SAVE button
+     * call this, so the two triggers can never drift out of sync with each other.
+     *
+     * NOTE: engine.saveGameState(...) is still a stub (throws UnsupportedOperationException)
+     * until it is implemented; clicking SAVE or pressing F5 before that is expected to fail
+     * loudly in the console, not silently do nothing.
+     */
+    private void saveGame() {
+        try {
+            engine.saveGameState(GameEngine.SAVE_FILE);
         } catch (IOException e) {
             e.printStackTrace();
         }

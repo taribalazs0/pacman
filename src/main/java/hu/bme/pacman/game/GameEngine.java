@@ -1,5 +1,8 @@
 package hu.bme.pacman.game;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +23,8 @@ public class GameEngine implements Serializable {
     public static final int DOT_SCORE = 10;
     public static final int GHOST_SCORE = 200;
     public static final int POWERPELLET_SCORE = 50;
+    /** Fixed name per the spec's I/O contract; the player never types a path for it. */
+    public static final String SAVE_FILE = "savestate.dat";
     public static final int TICKS_PER_SECOND = 60; // 60 frames per second
     public static final int TICKS_PER_STEP = 10; // 60/10 = 6 cells every second
     /** A frightened ghost moves only on every 2nd step, so it is half as fast as Pac-Man. */
@@ -278,16 +283,11 @@ public class GameEngine implements Serializable {
         return currentStepProgress;
     }
 
-    /* Todo */
-    public void saveGameState(String file) {
+    /* Todo: implement per the ObjectOutputStream plan discussed with the mentor */
+    public void saveGameState(String file) throws IOException {
         throw new UnsupportedOperationException("Saving a game comes later");
     }
     
-    /* Todo */
-    public void loadGameState(String file) {
-        throw new UnsupportedOperationException("Loading a game comes later");
-    }
-
     private void stepIfOpen(GameObject entity) {
         entity.rememberPosition();
         if (entity.getDirection() == Directions.IDLE) {
@@ -319,6 +319,31 @@ public class GameEngine implements Serializable {
             default -> entity.getY();
         };
     }
+
+    
+    /**
+     * Factory: deserialises a whole GameEngine from a file written by saveGameState.
+     * Returns a brand new instance rather than mutating an existing one, because most of
+     * GameEngine's fields (map, pacman, ghosts, random, ...) are final and cannot be
+     * reassigned after construction - the same reason LevelManager.loadFromCSV also
+     * returns a new LevelData instead of filling in an existing one.
+     *
+     * @param file path of the save file (use SAVE_FILE unless a test needs another path)
+     * @return the GameEngine exactly as it was when saveGameState wrote it
+     * @throws IOException if the file is missing or cannot be read
+     * @throws ClassNotFoundException if the JVM cannot resolve a class found in the stream
+     * @throws IllegalArgumentException if no file name is given
+     */
+    public static GameEngine loadGameState(String file) throws IOException, ClassNotFoundException {
+        if (file == null || file.isBlank()) {
+            throw new IllegalArgumentException("No save file given");
+        }
+
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
+            return (GameEngine) in.readObject();
+        }
+    }
+
 
     public int getScore() {
         return score;

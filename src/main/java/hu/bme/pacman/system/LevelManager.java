@@ -2,7 +2,9 @@ package hu.bme.pacman.system;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -331,5 +333,15 @@ public final class LevelManager {
             case GHOST_CHAOTIC -> GhostPersonality.CHAOTIC;
             default -> throw new IllegalArgumentException("Not a ghost symbol: " + symbol);
         };
+    }
+
+    public void saveGameState(String file) throws IOException {
+        try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+            // this serializes the whole GameEngine, with all available attributes
+            oos.writeObject(this);
+        }
+        catch(IOException e) {
+            System.out.println(e);
+        }
     }
 }
