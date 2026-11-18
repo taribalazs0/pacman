@@ -1,6 +1,7 @@
 package hu.bme.pacman.game;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import hu.bme.enums.CellType;
 
@@ -74,6 +75,34 @@ public class Labyrinth implements Serializable {
             openNeighbours++;
         }
         return openNeighbours >= 3;
+    }
+
+    /**
+     * Logic to decide whether all of the dots eaten in the labyrinth or not 
+     * (if yes, then the level is cleared and should advance to the next)
+     */
+    public boolean hasDotsLeft() {
+        for(CellType[] row : grid) {
+            for(CellType column : row) {
+                if(column == CellType.DOT || column == CellType.POWERPELLET) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A deep copy of the maze: a snapshot taken before the dots start disappearing,
+     * so a later level can be restored from it.
+     */
+    public Labyrinth copy() {
+        CellType[][] newGrid = new CellType[getHeight()][];
+        // for every y row we change newGrid[y] to an array which has copied values from original grid
+        for (int y = 0; y < getHeight(); y++) {
+            newGrid[y] = Arrays.copyOf(grid[y], getWidth());
+        }
+        return new Labyrinth(newGrid);
     }
 
     public void loadMap(String filename) {
