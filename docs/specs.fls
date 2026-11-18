@@ -289,6 +289,7 @@ INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\tex\latex\lm\omxlmex.fd
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\tex\latex\lm\omxlmex.fd
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\lmex10.tfm
 OUTPUT specs.toc
+INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\ec-lmri10.tfm
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\tex\latex\lm\t1lmtt.fd
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\tex\latex\lm\t1lmtt.fd
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\tex\latex\lm\t1lmtt.fd
@@ -311,7 +312,6 @@ INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\ec-lmssbx
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\ec-lmss8.tfm
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\enc\dvips\lm\lm-mathit.enc
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\ec-lmbx12.tfm
-INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\ec-lmri10.tfm
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\enc\dvips\lm\lm-rm.enc
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\enc\dvips\lm\lm-mathsy.enc
 INPUT C:\Users\skyba\AppData\Local\Programs\MiKTeX\fonts\tfm\public\lm\ec-lmtti10.tfm

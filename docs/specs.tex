@@ -45,7 +45,7 @@
     
     {\large October 16, 2026 \par}
     \vspace{0.2cm}
-    {\normalsize Revised: November 6, 2026 \par}
+    {\normalsize Revised: November 9, 2026 \par}
 \end{titlepage}
 
 % --- Table of Contents ---
@@ -62,18 +62,18 @@ The software's graphical user interface is built using the Java Swing framework,
 \section{Use-Cases}
 \begin{enumerate}
     \item \textbf{Starting and controlling the game:} The user can start a new game from the menu and control Pac-Man within the labyrinth using the WASD keyboard keys.
-    \item \textbf{Collecting dots and victory:} As Pac-Man passes through the dots, they disappear, and the score increases. If all dots are consumed, the player wins and proceeds to the next level. At higher levels, the difficulty of the game increases.
+    \item \textbf{Collecting dots and victory:} As Pac-Man passes through the dots, they disappear, and the score increases. If all dots and power pellets are consumed, the player proceeds to the next level: the same maze is played again with all its dots restored, while the score and the remaining lives are kept. At higher levels the Frightened state is shorter, which makes the game harder. The heads-up line always shows the current level.
     \item \textbf{Collision detection with ghosts:} If the character collides with a ghost, it loses a life. If the number of lives reaches zero, the game ends (Game Over). Upon starting a new game, the player always begins at the first level.
-    \item \textbf{Saving high-scores:} At the end of a game, the system records and saves the achieved score to a file.
-    \item \textbf{Saving game state:} The game can be saved at any time and state, allowing the player to load and resume it later from a file.
+    \item \textbf{Saving high-scores:} When the last life is lost, the system records the achieved score in a file. The \textit{Leaderboard} screen of the main menu lists every recorded score, from the best to the worst.
+    \item \textbf{Saving game state:} During a game, the \textit{SAVE \& QUIT} button in the heads-up line, or the F5 key, saves the game: the player chooses the file name in a save dialog, then the game returns to the main menu. Any number of games can be saved. \textit{Load previous game} in the main menu opens a file browser, and the chosen save is resumed exactly where it stopped.
     \item \textbf{Level editor mode:} In addition to the base game, the user has the ability to design their own custom maps, save them, and load previously created maps to play on.
 \end{enumerate}
 
 % --- 3. Solution Overview ---
 \section{Solution Overview}
 \begin{enumerate}
-    \item \textbf{Applied technological solutions:} Java SE, Swing (JFrame, JPanel, Graphics for low-level drawing, \texttt{javax.swing.Timer} driving the game loop at 60 ticks per second), and JUnit 5 for automated testing.
-    \item \textbf{File formats:} A simple CSV file for storing the high-score table, a plain-text tile picture (one character per tile) for map layouts, and Java binary serialization for saved game states.
+    \item \textbf{Applied technological solutions:} Java SE, Swing (JFrame, JPanel, CardLayout for switching screens, JFileChooser for picking save files, Graphics for low-level drawing, \texttt{javax.swing.Timer} driving the game loop at 60 ticks per second), and JUnit 5 for automated testing.
+    \item \textbf{File formats:} A simple CSV file for storing the high-score table, a plain-text tile picture (one character per tile) for map layouts, and Java binary serialization for saved game states (one \texttt{.dat} file per save, in the \texttt{saves} folder). See Section~\ref{sec:io}.
 \end{enumerate}
 
 \clearpage
@@ -84,14 +84,26 @@ The software's graphical user interface is built using the Java Swing framework,
 \textbf{Core Game Model}
 \begin{itemize}
     \item \textbf{GameEngine:} The central controller of the game. It runs the game loop (see Section~\ref{sec:game_loop}), updates the game state (positions, collisions), and manages the score, remaining lives, and the \texttt{currentLevel}. It is also responsible for saving and loading the active game state (utilizing \texttt{java.io.Serializable}). As the level increases, the duration of the ghosts' Frightened state progressively decreases to increase difficulty; the normal movement speed of Pac-Man and the ghosts stays the same on every level. A new game is started from a \texttt{LevelData} object built by the \texttt{LevelManager}, always with score 0, 3 lives, and level 1. The engine owns one shared \texttt{java.util.Random} for the ghosts' random choices; a second constructor accepts a given \texttt{Random}, so tests can pass a fixed seed and get the same choices on every run.
-    \item \textbf{Labyrinth:} The class representing the map. It stores the type of every tile (wall, dot, power pellet, empty) in a two-dimensional array, indexed as \texttt{grid[row][column]}. A tile is walkable if it is not a wall, and any position outside the array counts as a wall, so nothing can leave the map. An intersection is a walkable tile with at least three walkable neighbours. The \texttt{Labyrinth} does not read files; levels are loaded by the \texttt{LevelManager}.
+
+    \textbf{Level progression:} When the engine is built, it keeps an untouched copy of the maze (\texttt{originalMap}, made with \texttt{Labyrinth.copy()}). When no dot or power pellet is left (\texttt{Labyrinth.hasDotsLeft()} returns \texttt{false}), the end of the step calls \texttt{nextLevel()}:
+    \begin{itemize}
+        \item \texttt{currentLevel} grows by one;
+        \item every tile is copied back from \texttt{originalMap}, so all dots and power pellets return;
+        \item Pac-Man and all ghosts go back to their start tiles with \texttt{resetToStart()};
+        \item the frightened timer and the ghost-eating series are cleared;
+        \item the score and the remaining lives are kept.
+    \end{itemize}
+    The tiles are copied into the \textit{same} \texttt{Labyrinth} object instead of replacing it. This way the \texttt{map} field stays \texttt{final}, the model never reads a file, and nobody (for example a buffered \texttt{MoveCommand}) keeps a reference to an old maze. The same maze is played on every level.
+
+    \textbf{Saving and loading:} The \texttt{saveGameState(file)} method writes this engine to a file, while the \texttt{loadGameState(file)} method is a \textbf{static factory}: it returns a brand new \texttt{GameEngine} read from the file, instead of filling in an existing one, because most fields (\texttt{map}, \texttt{pacman}, \texttt{ghosts}, \texttt{random}, \ldots) are \texttt{final} and cannot be reassigned after construction. This is the same idea as the \texttt{loadFromCSV} method of the \texttt{LevelManager} returning a new \texttt{LevelData}. See Section~\ref{sec:io}.
+    \item \textbf{Labyrinth:} The class representing the map. It stores the type of every tile (wall, dot, power pellet, empty) in a two-dimensional array, indexed as \texttt{grid[row][column]}. A tile is walkable if it is not a wall, and any position outside the array counts as a wall, so nothing can leave the map. An intersection is a walkable tile with at least three walkable neighbours. \texttt{hasDotsLeft()} tells whether any \texttt{DOT} or \texttt{POWERPELLET} is left; it stops at the first one it finds. \texttt{copy()} returns a deep copy of the maze for the level snapshot: every row is copied into a new array (\texttt{Arrays.copyOf}), because \texttt{clone()} on a two-dimensional array would only copy the references to the rows, and eating a dot would change the snapshot too. The \texttt{Labyrinth} does not read files; levels are loaded by the \texttt{LevelManager}.
     \item \textbf{GameObject} (Abstract Base Class): Encapsulates common properties for all moving entities (X and Y coordinates, speed, direction). Positions are \textbf{tile coordinates}: \texttt{x} is the column and \texttt{y} is the row of the maze, and \texttt{speed} is the number of whole tiles one step covers. Besides the current tile, every object remembers two more:
     \begin{itemize}
         \item its \textbf{start tile} (\texttt{startX}, \texttt{startY}, \texttt{final}), where \texttt{resetToStart()} puts it back after Pac-Man loses a life, standing still;
         \item its \textbf{previous tile} (\texttt{prevX}, \texttt{prevY}), saved by \texttt{rememberPosition()} at the start of every step, even if the object does not move. The view uses it to slide the figure smoothly between two tiles, and the collision check uses it to detect two figures passing through each other.
     \end{itemize}
     \begin{itemize}
-        \item \textbf{PacMan} (Child Class): Represents the state of the player's character and handles its input logic: the latest key press is buffered as a \texttt{Command} and run at the next step. It overrides \texttt{resetToStart()}: after calling the parent version it also drops the buffered command, so a key pressed before dying does not start Pac-Man moving again right away.
+        \item \textbf{PacMan} (Child Class): Represents the state of the player's character and handles its input logic: the latest key press is buffered as a \texttt{Command} and run at the next step. It overrides \texttt{resetToStart()}: after calling the parent version it also drops the buffered command, so a key pressed before dying does not start Pac-Man moving again right away. The \texttt{currentCommand} field is \texttt{transient}: it is left out of a saved game, and a loaded game starts without a buffered key (see Section~\ref{sec:io}).
         \item \textbf{Ghost} (Child Class): Represents the state of the ghosts and manages their movement. \texttt{possibleDirections()} lists the walkable directions from the current tile, without turning back, unless the ghost is in a dead end. Two methods pick one of them: \texttt{chooseDirection()} picks at random, \texttt{chooseDirectionTowards(target)} picks the direction whose next tile is closest to a target tile (see Section~\ref{sec:game_loop}). \texttt{chooseChaseDirection()} asks the ghost's strategy object for the target (see Section~\ref{sec:design_patterns}) and steps towards it; a ghost whose personality has no strategy yet falls back to the random pick. In a corridor or a corner only one direction is left, so a real choice only happens at intersections. State changes are triggered by events, each with its own method: \texttt{frighten()}, \texttt{calmDown()}, \texttt{eaten()} and \texttt{respawn()}. The ghost also overrides \texttt{resetToStart()}: after the parent version it sets the state back to \texttt{CHASE}, so after Pac-Man loses a life no ghost stays frightened or dead.
     \end{itemize}
     \item \textbf{LevelData:} A plain data holder for the content of one map file: the \texttt{Labyrinth}, Pac-Man on his start tile, and the ghosts on their start tiles. The \texttt{LevelManager} creates it, and the \texttt{GameEngine} is built from its parts.
@@ -100,11 +112,19 @@ The software's graphical user interface is built using the Java Swing framework,
 \vspace{0.3cm}
 \textbf{UI and Management Classes}
 \begin{itemize}
-    \item \textbf{MainFrame (JFrame):} The application's main window utilizing a CardLayout to switch between the menu, the active game, and the editor.
-    \item \textbf{MainMenu (JPanel):} The start screen providing options to start a new game, load a saved game, view high scores, or open the map editor.
-    \item \textbf{GamePanel (JPanel):} The active gameplay screen that bridges the Model and View. It turns WASD key presses into \texttt{MoveCommand} objects, receives the game state from the \texttt{GameEngine}, and renders the maze and entities in its \texttt{paintComponent} method. Figures are drawn between their previous and current tile according to the engine's step progress, so movement looks smooth although the model works in whole tiles. A ghost's colour shows its personality (\texttt{TRACKER} red, \texttt{AMBUSHER} pink, \texttt{WANDERER} orange, \texttt{CHAOTIC} cyan, so it stays visible next to the dark blue walls). The state wins over the personality: a frightened ghost is white, and a \texttt{DEAD} ghost is only a small grey dot (its eyes). The heads-up line shows the score, the remaining lives, and \texttt{GAME OVER} when no life is left.
+    \item \textbf{MainFrame (JFrame):} The application's main window. A \texttt{CardLayout} switches between the screens: the menu, the active game, the leaderboard, and the editor. \texttt{switchScreen(name)} shows a screen; on the way to the leaderboard it first calls \texttt{LeaderboardPanel.refresh()}, so a score added since the last visit is always listed, and no button has to remember this. \texttt{startNewGame()} and \texttt{startGame(engine)} build the \texttt{GamePanel} and show it; \texttt{quitGame()} goes back to the menu. Only one game screen exists at a time (\texttt{currentGame}): when a game is left, its panel is stopped and removed, not just hidden, because a hidden panel would keep its \texttt{Timer} running in the background. The window is resized (\texttt{pack()}) to the screen being shown.
+    \item \textbf{MainMenu (JPanel):} The start screen: the yellow \textit{PAC-MAN} title and four centred buttons on a black background: \textit{Start new game} (\texttt{startBtn}), \textit{Load previous game} (\texttt{loadGameBtn}), \textit{Leaderboard} (\texttt{leaderboardBtn}), and \textit{Create map} (\texttt{editorBtn}). \textit{Load previous game} opens a file browser in the \texttt{saves} folder, loads the chosen file with \texttt{GameEngine.loadGameState}, and asks the \texttt{MainFrame} to show it; if the file cannot be loaded, an error message is shown and the menu stays.
+    \item \textbf{GamePanel (JPanel):} The active gameplay screen that bridges the Model and View. It turns WASD key presses into \texttt{MoveCommand} objects, receives the game state from the \texttt{GameEngine}, and renders the maze and entities in its \texttt{paintComponent} method. Figures are drawn between their previous and current tile according to the engine's step progress, so movement looks smooth although the model works in whole tiles. A ghost's colour shows its personality (\texttt{TRACKER} red, \texttt{AMBUSHER} pink, \texttt{WANDERER} orange, \texttt{CHAOTIC} cyan, so it stays visible next to the dark blue walls). The state wins over the personality: a frightened ghost is white, and a \texttt{DEAD} ghost is only a small grey dot (its eyes).
+    \begin{itemize}
+        \item \textbf{Heads-up line:} the score, the remaining lives, the current level, \texttt{GAME OVER} when no life is left, and a \textit{SAVE \& QUIT} button at its right end. The button is a real \texttt{JButton} child component (the panel uses absolute positioning for it), and it cannot take the keyboard focus, otherwise a click would stop the panel from receiving WASD.
+        \item \textbf{Save \& quit:} the button and the F5 key call the same method. It pauses the \texttt{Timer} (a modal dialog still processes Swing events, so the game would keep running behind it), asks for the file in a save dialog, saves, then goes back to the menu. If the player cancels or the write fails, the game simply continues, so no progress is lost.
+        \item \textbf{High score:} when the game ends, the panel writes the score to \texttt{highscores.csv} exactly once (a flag guards it, because \texttt{isGameOver()} stays true on every later tick). The player's name comes from \texttt{System.getProperty("user.name")}. Writing files is the UI's job; the model never touches files.
+        \item The panel does not know the \texttt{MainFrame}: the frame passes in ``go back to the menu'' as a \texttt{Runnable} callback (\texttt{onQuit}), and the panel only reports that the player quit.
+    \end{itemize}
+    \item \textbf{LeaderboardPanel (JPanel):} A read-only view of \texttt{highscores.csv}: rank, player name, score and date, one row per game, best first, in a monospaced font so the columns line up, with a \textit{Back to menu} button. It never writes the file. \texttt{refresh()} reloads the file each time the screen is shown; the leaderboard only changes between games, so no timer is needed. With no file yet it shows ``No scores yet''.
+    \item \textbf{HighscoreEntry (record):} One row of the leaderboard (\texttt{playerName}, \texttt{score}, \texttt{date} as a \texttt{LocalDate}). It only carries data between the \texttt{LevelManager} and the \texttt{LeaderboardPanel}, so it belongs to the UI and I/O package, not to the game model.
     \item \textbf{MapEditor (JPanel):} A graphical interface with a clickable grid allowing the user to draw custom mazes (placing walls, dots, power pellets, Pac-Man's start tile, and the start tiles of the four ghosts).
-    \item \textbf{LevelManager (Factory):} A dedicated, stateless class that reads a map file into a \texttt{LevelData} (maze, Pac-Man, and ghosts) and writes a \texttt{LevelData} back to a map file in the same format (see Section~\ref{sec:custom_maps}). It also manages the high-score table.
+    \item \textbf{LevelManager (Factory):} A dedicated, stateless class that reads a map file into a \texttt{LevelData} (maze, Pac-Man, and ghosts) and writes a \texttt{LevelData} back to a map file in the same format (see Section~\ref{sec:custom_maps}). It also manages the high-score table (\texttt{loadHighscores}, \texttt{appendHighscore}) and holds the names of the fixed files and folders (\texttt{HIGHSCORES\_FILE}, \texttt{SAVES\_DIR}, \texttt{DEFAULT\_SAVE\_NAME}).
 \end{itemize}
 
 
@@ -133,18 +153,21 @@ The software's graphical user interface is built using the Java Swing framework,
     ]
         
         % === UI & MANAGEMENT LAYER ===
-        \node[umlclass] (MainFrame) at (0, 7.5) {
+        \node[umlclass] (MainFrame) at (0, 8.4) {
             \textbf{MainFrame}
             \nodepart{two}
             - cardLayout: CardLayout \\
-            - mainMenu: MainMenu \\
-            - gamePanel: GamePanel \\
-            - mapEditor: MapEditor
+            - cardPanel: JPanel \\
+            - leaderboardPanel: LeaderboardPanel \\
+            - currentGame: GamePanel
             \nodepart{three}
-            + switchScreen(screen: String): void
+            + switchScreen(name): void \\
+            + startNewGame(): void \\
+            + startGame(engine): void \\
+            + quitGame(): void
         };
 
-        \node[umlclass] (MainMenu) at (-5.5, 7.5) {
+        \node[umlclass] (MainMenu) at (-5.5, 8.4) {
             \textbf{MainMenu}
             \nodepart{two}
             - startBtn: JButton \\
@@ -152,10 +175,28 @@ The software's graphical user interface is built using the Java Swing framework,
             - editorBtn: JButton \\
             - leaderboardBtn: JButton
             \nodepart{three}
-            - initGUI(): void
+            - loadGame(frame: MainFrame): void
         };
 
-        \node[umlclass] (MapEditor) at (5.5, 7.5) {
+        \node[umlclass] (LeaderboardPanel) at (-5.5, 4.0) {
+            \textbf{LeaderboardPanel}
+            \nodepart{two}
+            - listArea: JTextArea
+            \nodepart{three}
+            + refresh(): void
+        };
+
+        \node[umlclass] (HighscoreEntry) at (-5.5, 0.3) {
+            \guillemotleft record\guillemotright \\
+            \textbf{HighscoreEntry}
+            \nodepart{two}
+            playerName: String \\
+            score: int \\
+            date: LocalDate
+            \nodepart{three}
+        };
+
+        \node[umlclass] (MapEditor) at (5.5, 8.4) {
             \textbf{MapEditor}
             \nodepart{two}
             - editGrid: CellType[][] \\
@@ -164,27 +205,33 @@ The software's graphical user interface is built using the Java Swing framework,
             + saveCustomMap(): void
         };
 
-        \node[umlclass] (LevelManager) at (5.5, 3.5) {
+        \node[umlclass] (LevelManager) at (5.5, 4.0) {
             \textbf{LevelManager}
             \nodepart{two}
             % Nincs belső állapot (Utility/Factory)
             \nodepart{three}
-            + saveToCSV(file: String, level: LevelData): void \\
-            + loadFromCSV(file: String): LevelData
+            + saveToCSV(file, level: LevelData): void \\
+            + loadFromCSV(file): LevelData \\
+            + loadHighscores(file): List$<$HighscoreEntry$>$ \\
+            + appendHighscore(file, entry): void
         };
 
-        \node[umlclass] (GamePanel) at (0, 3.5) {
+        \node[umlclass] (GamePanel) at (0, 4.0) {
             \textbf{GamePanel}
             \nodepart{two}
             - engine: GameEngine \\
-            - keyListener: KeyListener
+            - timer: Timer \\
+            - onQuit: Runnable \\
+            - highscoreSaved: boolean
             \nodepart{three}
-            \# paintComponent(g: Graphics): void
+            \# paintComponent(g: Graphics): void \\
+            - saveAndQuit(): void \\
+            + stop(): void
         };
 
 
         % === CORE MODEL LAYER ===
-        \node[umlclass] (GameEngine) at (0, -2.0) {
+        \node[umlclass] (GameEngine) at (0, -2.6) {
             \guillemotleft Serializable\guillemotright \\
             \textbf{GameEngine}
             \nodepart{two}
@@ -192,7 +239,7 @@ The software's graphical user interface is built using the Java Swing framework,
             - tickInStep, stepCount: int \\
             - frightenedStepsLeft: int \\
             - ghostsEatenInFright: int \\
-            - map: Labyrinth \\
+            - map, originalMap: Labyrinth \\
             - pacman: PacMan \\
             - ghosts: List$<$Ghost$>$ \\
             - random: Random
@@ -200,13 +247,14 @@ The software's graphical user interface is built using the Java Swing framework,
             + update(): void \textit{(one tick)} \\
             + step(): void \textit{(one tile)} \\
             + checkCollisions(): void \\
+            + nextLevel(): void \\
             + isGameOver(): boolean \\
             + getStepProgress(): double \\
-            + saveGameState(file: String): void \\
-            + loadGameState(file: String): void
+            + saveGameState(file): void \\
+            + loadGameState(file): GameEngine \textit{(static)}
         };
 
-        \node[umlclass] (Labyrinth) at (5.5, -2.5) {
+        \node[umlclass] (Labyrinth) at (5.5, -2.6) {
             \guillemotleft Serializable\guillemotright \\
             \textbf{Labyrinth}
             \nodepart{two}
@@ -215,10 +263,12 @@ The software's graphical user interface is built using the Java Swing framework,
             + getCell(x, y): CellType \\
             + setCell(x, y, type): void \\
             + isWalkable(x, y): boolean \\
-            + isIntersection(x, y): boolean
+            + isIntersection(x, y): boolean \\
+            + hasDotsLeft(): boolean \\
+            + copy(): Labyrinth
         };
 
-        \node[umlclass] (GameObject) at (0, -9.3) {
+        \node[umlclass] (GameObject) at (0, -9.9) {
             \guillemotleft Serializable\guillemotright \\
             \textbf{\textit{GameObject}}
             \nodepart{two}
@@ -235,16 +285,16 @@ The software's graphical user interface is built using the Java Swing framework,
             + getPrevX(), getPrevY(): int
         };
 
-        \node[umlclass] (PacMan) at (-3, -14.5) {
+        \node[umlclass] (PacMan) at (-3, -15.1) {
             \textbf{PacMan}
             \nodepart{two}
-            - currentCommand: Command
+            - currentCommand: Command \textit{(transient)}
             \nodepart{three}
             + processInput(): void \\
             + resetToStart(): void \textit{(override)}
         };
         
-        \node[umlclass] (Command) at (-8, -14.5) {
+        \node[umlclass] (Command) at (-8, -15.1) {
             \guillemotleft interface\guillemotright \\
             \textbf{Command}
             \nodepart{two}
@@ -252,7 +302,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + execute(): void
         };
 
-        \node[umlclass, text width=5.6cm] (Ghost) at (3.6, -17.4) {
+        \node[umlclass, text width=5.6cm] (Ghost) at (3.6, -18.0) {
             \textbf{Ghost}
             \nodepart{two}
             - state: GhostState \\
@@ -270,7 +320,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + updateState(): void
         };
 
-        \node[umlclass] (MoveCommand) at (-8, -18.5) {
+        \node[umlclass] (MoveCommand) at (-8, -19.1) {
             \textbf{MoveCommand}
             \nodepart{two}
             - pacman: PacMan \\
@@ -292,7 +342,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + getGhosts(): List$<$Ghost$>$
         };
 
-        \node[umlclass, text width=5.0cm] (GhostStrategy) at (3.6, -24.0) {
+        \node[umlclass, text width=5.0cm] (GhostStrategy) at (3.6, -23.4) {
             \guillemotleft interface\guillemotright \\
             \textbf{GhostStrategy}
             \nodepart{two}
@@ -300,7 +350,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + target(self: Ghost, pacman: PacMan, map: Labyrinth): Tile
         };
 
-        \node[umlclass] (Tile) at (-3, -24.0) {
+        \node[umlclass] (Tile) at (-3, -23.4) {
             \guillemotleft record, Serializable\guillemotright \\
             \textbf{Tile}
             \nodepart{two}
@@ -309,7 +359,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + x(), y(): int
         };
 
-        \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.8cm, fill=yellow!10] (StrategyNote) at (10.2, -24.0) {
+        \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.8cm, fill=yellow!10] (StrategyNote) at (10.2, -23.4) {
             Implemented by (all \guillemotleft Serializable\guillemotright): \\
             TrackerStrategy, AmbusherStrategy, \\
             WandererStrategy, ChaoticStrategy \\
@@ -353,6 +403,8 @@ The software's graphical user interface is built using the Java Swing framework,
         \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.west) -- (MainMenu.east);
         \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.east) -- (MapEditor.west);
         \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.south) -- (GamePanel.north);
+        \draw[{Diamond[fill=black, scale=1.2]}-, thick] (MainFrame.south west) -- (LeaderboardPanel.north east);
+        \draw[dashed, ->, thick] (LeaderboardPanel.south) -- (HighscoreEntry.north) node[midway, right, font=\sffamily\scriptsize] {\guillemotleft use\guillemotright};
         
         \draw[dashed, ->, thick] (MapEditor.south) -- (LevelManager.north);
         \draw[dashed, ->, thick] (Labyrinth.north) -- (LevelManager.south);
@@ -373,7 +425,7 @@ The software's graphical user interface is built using the Java Swing framework,
         \draw[dashed, -{Triangle[open, fill=white, scale=1.2]}, thick] (MoveCommand.north) -- (Command.south);
 
         % LevelData: LevelManager creates it, GameEngine is built from it
-        \draw[dashed, ->, thick] (LevelManager.east) -- ++(0.3, 0) |- (LevelData.east) node[pos=0.25, left, font=\sffamily\scriptsize] {\guillemotleft create\guillemotright};
+        \draw[dashed, ->, thick] (LevelManager.east) -- ++(0.3, 0) |- (LevelData.east) node[pos=0.12, left, font=\sffamily\scriptsize] {\guillemotleft create\guillemotright};
         \draw[dashed, ->, thick] (GameEngine.south east) -- (LevelData.north west) node[midway, above right, font=\sffamily\scriptsize] {\guillemotleft use\guillemotright};
 
         % Strategy pattern: the ghost owns its strategy object
@@ -402,7 +454,6 @@ The model works in whole tiles, but the screen is redrawn 60 times per second. T
 \textbf{Order of one step:}
 \begin{enumerate}
     \item If the game is over, nothing happens.
-    \item Pac-Man runs his buffered command, which turns him if the tile in the wished direction is open, then steps one tile unless a wall is ahead.
     \item If the frightened timer is running, it counts down by one; when it reaches 0, every ghost gets \texttt{calmDown()}. This happens before anyone moves, so in that step the ghosts already move at full speed.
     \item Pac-Man runs his buffered command, which turns him if the tile in the wished direction is open, then steps one tile unless a wall is ahead.
     \item Each ghost chooses a direction according to its state and steps:
@@ -413,6 +464,7 @@ The model works in whole tiles, but the screen is redrawn 60 times per second. T
     \end{itemize}
     After its step, \texttt{respawn()} turns a \texttt{DEAD} ghost that has just reached its start tile back into \texttt{CHASE}. Calling it after the step matters: a ghost eaten on its own start tile first has to leave it, otherwise it would come back to life at once.
     \item Collisions are checked once everyone has moved.
+    \item If no dot or power pellet is left, \texttt{nextLevel()} starts the next level. This comes after the collision check, because that check eats the last dot and counts its points.
 \end{enumerate}
 Before moving, every figure saves its previous tile with \texttt{rememberPosition()}, even if it stands still. Otherwise the view would replay the last slide and the collision check would compare old tiles.
 
@@ -447,7 +499,7 @@ Before moving, every figure saves its previous tile with \texttt{rememberPositio
     \end{enumerate}
     \item \textbf{Eating a ghost:} The ghost becomes \texttt{DEAD} (\texttt{eaten()}). Within one fright the eaten ghosts are worth 200, 400, 800, and 1600 points: $200 \cdot 2^n$, where $n$ is the number of ghosts already eaten since the last pellet, capped at 3, so on a custom map with more ghosts every further one is still 1600. In Java $2^n$ is written as \texttt{1 << n}; the \texttt{\^{}} operator is bitwise XOR, not a power.
     \item \textbf{Losing a life:} On a deadly collision, \texttt{lives} decreases by one, the frightened timer is cleared, and Pac-Man and \textit{all} ghosts return to their start tiles with \texttt{resetToStart()} (every ghost back in \texttt{CHASE}); eaten dots stay eaten. At most one life can be lost per step: the second pass stops after the first hit.
-    \item \textbf{Game Over:} \texttt{isGameOver()} is computed from the lives (\texttt{lives <= 0}) instead of being stored in a separate flag, so the two can never contradict each other. When it is true, \texttt{step()} returns immediately and nothing moves any more.
+    \item \textbf{Game Over:} \texttt{isGameOver()} is computed from the lives (\texttt{lives <= 0}) instead of being stored in a separate flag, so the two can never contradict each other. When it is true, \texttt{step()} returns immediately and nothing moves any more, and the \texttt{GamePanel} records the score in the leaderboard once.
 \end{itemize}
 
 \clearpage
@@ -553,13 +605,16 @@ The test suite must cover critical gameplay mechanics, including but not limited
 
 % --- 8. I/O and Persistence Contract ---
 \section{I/O and Persistence Contract}
-The application is following these persistance protocols in order to ensure robust data handling:
+\label{sec:io}
+The application is following these persistance protocols in order to ensure robust data handling. Every path is relative to the working directory, so the game must be started from the project folder.
 
 \subsection*{1. High-Score Table}
 \begin{itemize}
-    \item \textbf{File:} \texttt{highscores.csv}
-    \item \textbf{Responsibility:} Handled by the \texttt{LevelManager} class, which serves as the general I/O utility for the application.
-    \item \textbf{Data Structure:} Each line must strictly follow the format: \texttt{PlayerName;Score;Date}.
+    \item \textbf{File:} \texttt{highscores.csv} in the project folder (\texttt{LevelManager.HIGHSCORES\_FILE}).
+    \item \textbf{Responsibility:} Handled by the \texttt{LevelManager} class, which serves as the general I/O utility for the application. The \texttt{GamePanel} adds the score when a game ends; the \texttt{LeaderboardPanel} only reads the file.
+    \item \textbf{Data Structure:} Each line must strictly follow the format: \texttt{PlayerName;Score;Date}. The date is written as \texttt{yyyy-MM-dd} (\texttt{LocalDate}), for example \texttt{balazs;2350;2026-11-09}.
+    \item \textbf{Always sorted:} \texttt{appendHighscore(file, entry)} reads every row, adds the new one, sorts them by score from the highest to the lowest, and rewrites the whole file. The file on disk is therefore always ready to display, and there is no separate sorting step.
+    \item \textbf{Reading:} \texttt{loadHighscores(file)} returns the rows best first. A missing file is not an error, only an empty leaderboard (nobody has finished a game yet). A line that is not \texttt{Name;Score;Date}, or has a bad score or date, is rejected with its line number (\texttt{IllegalArgumentException}).
     \item \textbf{Player Identity:} The system must not interrupt the player with a text input prompt to ask for their name. Instead, it must automatically fetch the identity of the user currently logged into the operating system using \texttt{System.getProperty("user.name")}.
 \end{itemize}
 
@@ -568,15 +623,17 @@ Saving the complex state of an ongoing game (the exact position of Pac-Man, the 
 
 Therefore, the active game state is saved using \textbf{Java Binary Serialization}:
 \begin{itemize}
-    \item \textbf{File:} \texttt{savestate.dat}
-    \item \textbf{Implementation:} All Core Model classes (\texttt{GameEngine}, \texttt{Labyrinth}, \texttt{GameObject}, \texttt{PacMan}, \texttt{Ghost}, the \texttt{GhostStrategy} implementations, and data Enums) must implement the \texttt{java.io.Serializable} interface. \texttt{LevelData} is only passed from the \texttt{LevelManager} to the \texttt{GameEngine} and is not saved, so it does not need to. The engine's \texttt{java.util.Random} is itself serializable, and the plain counters (\texttt{tickInStep}, \texttt{stepCount}) and every figure's start and previous tile are saved automatically.
-    \item \textbf{Execution:} The \texttt{GameEngine.saveGameState()} method writes the entire engine instance to a binary file using an \texttt{ObjectOutputStream}. Loading a game simply reads the object back into memory using an \texttt{ObjectInputStream}, perfectly restoring the exact state without manual data mapping.
+    \item \textbf{Files:} one \texttt{.dat} file per saved game, named by the player. The save dialog opens in the \texttt{saves} folder (\texttt{LevelManager.SAVES\_DIR}, created if it is missing) and offers \texttt{savestate.dat} as the name (\texttt{DEFAULT\_SAVE\_NAME}). A name typed without \texttt{.dat} gets it added, and an existing file is only overwritten after a confirmation. The file browser of \textit{Load previous game} opens in the same folder and shows only \texttt{.dat} files, but any saved game can be chosen, not only the last one.
+    \item \textbf{Implementation:} All Core Model classes (\texttt{GameEngine}, \texttt{Labyrinth}, \texttt{GameObject}, \texttt{PacMan}, \texttt{Ghost}, the \texttt{GhostStrategy} implementations, and data Enums) must implement the \texttt{java.io.Serializable} interface. \texttt{LevelData} is only passed from the \texttt{LevelManager} to the \texttt{GameEngine} and is not saved, so it does not need to. The engine's \texttt{java.util.Random} is itself serializable, and the plain counters (\texttt{tickInStep}, \texttt{stepCount}), the maze snapshot of the level (\texttt{originalMap}), and every figure's start and previous tile are saved automatically.
+    \item \textbf{What is not saved:} \texttt{PacMan.currentCommand} is \texttt{transient}. A \texttt{MoveCommand} is not \texttt{Serializable}, and a buffered key press is input, not game state, so a loaded game starts with no pending turn.
+    \item \textbf{Execution:} The \texttt{saveGameState(file)} method of the \texttt{GameEngine} writes the entire engine instance to a binary file using an \texttt{ObjectOutputStream}. The static \texttt{loadGameState(file)} reads it back with an \texttt{ObjectInputStream} and returns it as a new engine, restoring the exact state without manual data mapping. A file that holds some other object is reported as an \texttt{IOException} (``Not a Pac-Man save file''), like every other unreadable file, and the menu shows the error instead of crashing.
+    \item \textbf{Limitation:} The model classes do not declare a \texttt{serialVersionUID}, so Java computes one from the class structure. After a change to a model class, saves made with the old version can no longer be loaded (\texttt{InvalidClassException}, shown as a load error).
 \end{itemize}
 
 \subsection*{3. Maps}
 \label{sec:custom_maps}
 \begin{itemize}
-    \item \textbf{Format:} Both the built-in levels and the maps made in the \texttt{MapEditor} are plain-text files that look like the maze itself: one maze row per line, one character per tile. The \texttt{LevelManager} reads them line by line with \texttt{loadFromCSV} and writes them with \texttt{saveToCSV}. The built-in first level is \texttt{maps/level1.txt}; the path is relative, so the game must be started from the project folder.
+    \item \textbf{Format:} Both the built-in levels and the maps made in the \texttt{MapEditor} are plain-text files that look like the maze itself: one maze row per line, one character per tile. The \texttt{LevelManager} reads them line by line with \texttt{loadFromCSV} and writes them with \texttt{saveToCSV}. The built-in first level is \texttt{maps/level1.txt}; \textit{Start new game} always starts on it.
     \item \textbf{Symbols:}
 
     \vspace{0.2cm}

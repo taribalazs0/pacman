@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 24.1) (preloaded format=pdflatex 2025.11.30)  10 NOV 2026 23:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 24.1) (preloaded format=pdflatex 2025.11.30)  18 NOV 2026 23:23
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -656,20 +656,28 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 [3
 
 ]
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 385.
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[4]
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 437.
  (C:\Users\skyba\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 385.
+(Font)              <9> on input line 437.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 385.
+(Font)              <5> on input line 437.
 LaTeX Font Info:    Font shape `T1/lmss/m/it' in size <9> not available
-(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 385.
+(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 437.
 LaTeX Font Info:    Font shape `T1/lmss/bx/it' in size <9> not available
-(Font)              Font shape `T1/lmss/bx/sl' tried instead on input line 385.
+(Font)              Font shape `T1/lmss/bx/sl' tried instead on input line 437.
 
-Underfull \hbox (badness 2469) in paragraph at lines 385--385
+Underfull \hbox (badness 2469) in paragraph at lines 437--437
 [][]\T1/lmss/m/n/9 + pos-si-bleDi-rec-tions(map): 
  []
 
@@ -683,14 +691,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[4]
-
-LaTeX Warning: Text page 5 contains only floats.
-
-
-Overfull \vbox (6.6151pt too high) has occurred while \output is active []
-
-
+[5]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -698,7 +699,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[5{C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}]
+[6{C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -706,17 +707,9 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[6
+[7
 
 {C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}]
-
-Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 13.59999pt, for example:
-(fancyhdr)                \setlength{\headheight}{13.59999pt}.
-(fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
-
-[7]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -732,16 +725,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[9
-
-]
-Underfull \hbox (badness 1418) in paragraph at lines 500--501
-[]\T1/lmr/bx/n/10.95 Observer Pat-tern: \T1/lmr/m/n/10.95 The UI ren-der-ing com-po-nent (\T1/lmtt/m/n/10.95 JPanel\T1/lmr/m/n/10.95 ) should ob-serve the
- []
-
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
+[9]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -749,7 +733,16 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[10]
+[10
+
+]
+Underfull \hbox (badness 1418) in paragraph at lines 552--553
+[]\T1/lmr/bx/n/10.95 Observer Pat-tern: \T1/lmr/m/n/10.95 The UI ren-der-ing com-po-nent (\T1/lmtt/m/n/10.95 JPanel\T1/lmr/m/n/10.95 ) should ob-serve the
+ []
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -765,13 +758,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[12
-
-]
-Underfull \hbox (badness 1019) in paragraph at lines 572--573
-\T1/lmtt/m/n/10.95 PacMan\T1/lmr/m/n/10.95 , \T1/lmtt/m/n/10.95 Ghost\T1/lmr/m/n/10.95 , the \T1/lmtt/m/n/10.95 GhostStrategy \T1/lmr/m/n/10.95 im-ple-men-ta-tions, and data Enums) must im-
- []
-
+[12]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -782,8 +769,14 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 [13
 
 ]
-LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 600.
+Underfull \hbox (badness 1019) in paragraph at lines 627--628
+\T1/lmtt/m/n/10.95 PacMan\T1/lmr/m/n/10.95 , \T1/lmtt/m/n/10.95 Ghost\T1/lmr/m/n/10.95 , the \T1/lmtt/m/n/10.95 GhostStrategy \T1/lmr/m/n/10.95 im-ple-men-ta-tions, and data Enums) must im-
+ []
+
+
+Underfull \hbox (badness 1077) in paragraph at lines 629--630
+\T1/lmr/m/n/10.95 tire en-gine in-stance to a bi-nary file us-ing an \T1/lmtt/m/n/10.95 ObjectOutputStream\T1/lmr/m/n/10.95 . The static
+ []
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -792,7 +785,20 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[14] (specs.aux)
+[14
+
+]
+LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 657.
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[15] (specs.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-04>
@@ -801,17 +807,17 @@ Package rerunfilecheck Info: File `specs.out' has not changed.
 (rerunfilecheck)             Checksum: A77BFA467566C36FFB26CE621B611449;1263.
  ) 
 Here is how much of TeX's memory you used:
- 22838 strings out of 474486
- 444276 string characters out of 5743754
- 1963542 words of memory out of 5000000
- 44680 multiletter control sequences out of 15000+600000
+ 22854 strings out of 474486
+ 444643 string characters out of 5743754
+ 1970542 words of memory out of 5000000
+ 44695 multiletter control sequences out of 15000+600000
  631809 words of font info for 75 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  84i,12n,93p,1217b,957s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi8.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi9.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr17.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss8.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss9.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmssbo10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmssbx10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsso9.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtk10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb><C:/Users/skyba/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtti10.pfb>
-Output written on specs.pdf (15 pages, 484677 bytes).
+Output written on specs.pdf (16 pages, 499887 bytes).
 PDF statistics:
- 258 PDF objects out of 1000 (max. 8388607)
- 46 named destinations out of 1000 (max. 500000)
+ 265 PDF objects out of 1000 (max. 8388607)
+ 47 named destinations out of 1000 (max. 500000)
  77 words of extra memory for PDF output out of 10000 (max. 10000000)
 
