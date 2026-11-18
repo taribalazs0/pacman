@@ -66,6 +66,13 @@ public final class LevelManager {
     /** The separator between the three fields of one highscores.csv row. */
     private static final String HIGHSCORE_SEPARATOR = ";";
 
+    /** Folder of the saved games (relative to the working directory, like maps/). */
+    public static final String SAVES_DIR = "saves";
+    /** The name offered first in the save dialog; the spec's savestate.dat. */
+    public static final String DEFAULT_SAVE_NAME = "savestate.dat";
+    /** Extension of a saved game, without the dot. */
+    public static final String SAVE_EXTENSION = "dat";
+
     /** Only static methods, so nobody needs an instance. */
     private LevelManager() {
     }

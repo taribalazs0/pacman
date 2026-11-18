@@ -1,8 +1,10 @@
 package hu.bme.pacman.game;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +25,6 @@ public class GameEngine implements Serializable {
     public static final int DOT_SCORE = 10;
     public static final int GHOST_SCORE = 200;
     public static final int POWERPELLET_SCORE = 50;
-    /** Fixed name per the spec's I/O contract; the player never types a path for it. */
-    public static final String SAVE_FILE = "savestate.dat";
     public static final int TICKS_PER_SECOND = 60; // 60 frames per second
     public static final int TICKS_PER_STEP = 10; // 60/10 = 6 cells every second
     /** A frightened ghost moves only on every 2nd step, so it is half as fast as Pac-Man. */
@@ -283,9 +283,18 @@ public class GameEngine implements Serializable {
         return currentStepProgress;
     }
 
-    /* Todo: implement per the ObjectOutputStream plan discussed with the mentor */
+    /**
+     * Writes this whole GameEngine, as-is, to a binary file (ObjectOutputStream).
+     * PacMan.currentCommand is transient, so a buffered keystroke is never part of the file.
+     */
     public void saveGameState(String file) throws IOException {
-        throw new UnsupportedOperationException("Saving a game comes later");
+        if (file == null || file.isBlank()) {
+            throw new IllegalArgumentException("No save file given");
+        }
+
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
+            out.writeObject(this);
+        }
     }
     
     private void stepIfOpen(GameObject entity) {
@@ -328,9 +337,9 @@ public class GameEngine implements Serializable {
      * reassigned after construction - the same reason LevelManager.loadFromCSV also
      * returns a new LevelData instead of filling in an existing one.
      *
-     * @param file path of the save file (use SAVE_FILE unless a test needs another path)
+     * @param file path of the save file
      * @return the GameEngine exactly as it was when saveGameState wrote it
-     * @throws IOException if the file is missing or cannot be read
+     * @throws IOException if the file is missing, cannot be read, or is not a saved game
      * @throws ClassNotFoundException if the JVM cannot resolve a class found in the stream
      * @throws IllegalArgumentException if no file name is given
      */
@@ -340,7 +349,14 @@ public class GameEngine implements Serializable {
         }
 
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
-            return (GameEngine) in.readObject();
+            Object loaded = in.readObject();
+            // The player can pick any file now. A serialized object of another class would make a
+            // plain cast throw ClassCastException (a RuntimeException the caller does not expect),
+            // so it is reported as an IOException instead, like every other "bad file" case.
+            if (!(loaded instanceof GameEngine engine)) {
+                throw new IOException("Not a Pac-Man save file: " + file);
+            }
+            return engine;
         }
     }
 

@@ -5,6 +5,8 @@ import java.awt.CardLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import hu.bme.pacman.game.GameEngine;
+
 /**
  * The top-level window. It owns a CardLayout and swaps which screen is visible
  * (menu, game, editor, leaderboard). It does not know any rule of the game itself.
@@ -20,6 +22,8 @@ public class MainFrame extends JFrame {
     // Kept as a field (not just added to cardPanel and forgotten) because switchScreen needs
     // to call refresh() on this exact instance right before the leaderboard becomes visible.
     private final LeaderboardPanel leaderboardPanel = new LeaderboardPanel(this);
+    // The running game screen, or null while no game is open
+    private GamePanel currentGame;
 
     public MainFrame() {
         super("Pac-Man");
@@ -52,17 +56,45 @@ public class MainFrame extends JFrame {
         cardLayout.show(cardPanel, screenName);
     }
 
+    /** "Start new game": a fresh game on the default map. */
+    public void startNewGame() {
+        showGame(new GamePanel(this::quitGame));
+    }
+
+    /** "Load previous game": continues a game loaded from a save file. */
+    public void startGame(GameEngine engine) {
+        showGame(new GamePanel(engine, this::quitGame));
+    }
+
     /**
-     * Registers a freshly built game screen under SCREEN_GAME and shows it.
-     * Called with a new GamePanel for "Start new game", or with one built from
-     * a loaded GameEngine once GameEngine.loadGameState exists, for "Load previous game".
+     * Back to the menu after SAVE & QUIT. The game screen is stopped and removed, not just
+     * hidden: a hidden GamePanel would keep its Timer running, and every new game would
+     * leave one more invisible game ticking in the background.
      */
-    public void startGame(GamePanel gamePanel) {
+    public void quitGame() {
+        removeCurrentGame();
+        switchScreen(SCREEN_MENU);
+        // Shrink the window back to the menu's size
+        pack();
+    }
+
+    /** Registers the game screen under SCREEN_GAME and shows it. */
+    private void showGame(GamePanel gamePanel) {
+        removeCurrentGame();
+        currentGame = gamePanel;
         cardPanel.add(gamePanel, SCREEN_GAME);
         switchScreen(SCREEN_GAME);
         // The frame was packed to the menu's size; now that a (likely larger) GamePanel
         // is showing, resize the window to fit it.
         pack();
         gamePanel.requestFocusInWindow();
+    }
+
+    private void removeCurrentGame() {
+        if (currentGame != null) {
+            currentGame.stop();
+            cardPanel.remove(currentGame);
+            currentGame = null;
+        }
     }
 }

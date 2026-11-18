@@ -3,16 +3,21 @@ package hu.bme.pacman.system;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Insets;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import hu.bme.enums.CellType;
 import hu.bme.enums.Directions;
@@ -33,6 +38,8 @@ import hu.bme.pacman.game.PacMan;
 public class GamePanel extends JPanel {
     private static final int TILE = 32;
     private static final int HUD = 36;
+    /** Extra pixels on top of the SAVE & QUIT button's measured width (see the constructor). */
+    private static final int BUTTON_SPARE_WIDTH = 24;
 
     // Default level/map
     private static final String DEFAULT_LEVEL = "maps/level1.txt";
@@ -41,14 +48,22 @@ public class GamePanel extends JPanel {
     // Guards the highscore write: isGameOver() stays true on every tick after the game ends,
     // so without this flag the same score would be appended to highscores.csv ~60 times a second.
     private boolean highscoreSaved;
+    // A field (not a local variable) so the game can be paused while the save dialog is open,
+    // and stopped for good when the player leaves this screen.
+    private final Timer timer;
+    // What to do after a successful save. GamePanel does not know MainFrame; the frame passes
+    // in "go back to the menu" as a callback, so this panel only reports that the player quit.
+    private final Runnable onQuit;
 
-    public GamePanel() {
-        this(createDefaultEngine());
+    /** A new game on the default map. */
+    public GamePanel(Runnable onQuit) {
+        this(createDefaultEngine(), onQuit);
     }
 
-
-    public GamePanel(GameEngine engine) {
+    /** A game on an existing engine, e.g. one loaded from a save file. */
+    public GamePanel(GameEngine engine, Runnable onQuit) {
         this.engine = engine;
+        this.onQuit = onQuit;
         setBackground(Color.BLACK);
         setFocusable(true);
 
@@ -61,19 +76,29 @@ public class GamePanel extends JPanel {
         // ARCHITECTURE DECISION: paintComponent only draws (Score/Lives/Level text, the maze,
         // the actors); a real, clickable JButton cannot be drawn with Graphics, it has to be an
         // actual child component. setLayout(null) switches this panel to absolute positioning,
-        // so the SAVE button can sit in a fixed pixel spot inside the HUD strip without a
-        // layout manager fighting the fixed-size drawing beneath it.
+        // so the button can sit in a fixed pixel spot inside the HUD strip.
         setLayout(null);
-        JButton saveBtn = new JButton("SAVE");
-        saveBtn.setBounds(panelWidth - 70, 4, 60, HUD - 8);
-        saveBtn.addActionListener(event -> saveGame());
+        JButton saveBtn = new JButton("SAVE & QUIT");
+        saveBtn.setMargin(new Insets(2, 6, 2, 6));
+        // The button's own preferred size, plus spare width. With Windows display scaling
+        // (125%, 150%) Swing measures the label in whole pixels but draws it at fractional ones,
+        // so the drawn text can be a few pixels wider than measured, and Swing then cuts it to "...".
+        // The spare width absorbs that. The button sits at the right end of the HUD strip.
+        Dimension buttonSize = saveBtn.getPreferredSize();
+        int buttonWidth = buttonSize.width + BUTTON_SPARE_WIDTH;
+        saveBtn.setBounds(panelWidth - buttonWidth - 8, (HUD - buttonSize.height) / 2,
+                buttonWidth, buttonSize.height);
+        // Without this, a click moves the keyboard focus to the button, and the panel's
+        // KeyListener stops getting WASD: that is why Pac-Man froze after the old SAVE click.
+        saveBtn.setFocusable(false);
+        saveBtn.addActionListener(event -> saveAndQuit());
         add(saveBtn);
 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent event) {
                 if (event.getKeyCode() == KeyEvent.VK_F5) {
-                    saveGame();
+                    saveAndQuit();
                     return;
                 }
                 Directions chosen = switch (event.getKeyCode()) {
@@ -92,7 +117,7 @@ public class GamePanel extends JPanel {
 
         // One engine tick per frame, about 60 times a second (1000 / 60 = 16 ms).
         // The engine moves the actors one tile every TICKS_PER_STEP ticks; in between we only redraw.
-        Timer timer = new Timer(1000 / GameEngine.TICKS_PER_SECOND, event -> {
+        timer = new Timer(1000 / GameEngine.TICKS_PER_SECOND, event -> {
             engine.update();
             if (engine.isGameOver() && !highscoreSaved) {
                 highscoreSaved = true;
@@ -125,19 +150,83 @@ public class GamePanel extends JPanel {
     }
 
     /**
-     * Saves the running game to GameEngine.SAVE_FILE. Both the F5 key and the SAVE button
-     * call this, so the two triggers can never drift out of sync with each other.
-     *
-     * NOTE: engine.saveGameState(...) is still a stub (throws UnsupportedOperationException)
-     * until it is implemented; clicking SAVE or pressing F5 before that is expected to fail
-     * loudly in the console, not silently do nothing.
+     * Asks where to save, saves, then goes back to the menu. Both F5 and the SAVE & QUIT
+     * button call this, so the two can never behave differently.
+     * Cancelling the dialog, or a failed write, resumes the game instead: quitting then would
+     * throw the player's progress away.
      */
-    private void saveGame() {
-        try {
-            engine.saveGameState(GameEngine.SAVE_FILE);
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void saveAndQuit() {
+        // A modal dialog still runs Swing events while it is open, Timer ticks included,
+        // so without stopping the timer the ghosts would keep playing behind the dialog.
+        timer.stop();
+
+        File file = chooseSaveFile();
+        if (file == null) {
+            resume();
+            return;
         }
+        try {
+            engine.saveGameState(file.getPath());
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Could not save the game: " + e.getMessage(),
+                    "Save failed", JOptionPane.ERROR_MESSAGE);
+            resume();
+            return;
+        }
+        onQuit.run();
+    }
+
+    /**
+     * Shows the save dialog in the saves folder, offering savestate.dat as the name.
+     * Adds ".dat" if the player typed a name without it, and asks before overwriting.
+     *
+     * @return the file to write, or null if the player cancelled
+     */
+    private File chooseSaveFile() {
+        JFileChooser chooser = createSaveChooser();
+        chooser.setDialogTitle("Save game");
+        chooser.setSelectedFile(new File(LevelManager.SAVES_DIR, LevelManager.DEFAULT_SAVE_NAME));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return null;
+        }
+
+        File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith("." + LevelManager.SAVE_EXTENSION)) {
+            file = new File(file.getParentFile(), file.getName() + "." + LevelManager.SAVE_EXTENSION);
+        }
+        if (file.exists()) {
+            int answer = JOptionPane.showConfirmDialog(this,
+                    file.getName() + " already exists. Overwrite it?", "Save game", JOptionPane.YES_NO_OPTION);
+            if (answer != JOptionPane.YES_OPTION) {
+                return null;
+            }
+        }
+        return file;
+    }
+
+    /**
+     * A file chooser that opens in the saves folder and shows only .dat files.
+     * Package-private and static, because MainMenu's "Load previous game" needs the same one.
+     * The folder is created if missing, otherwise the dialog would fall back to the home folder.
+     */
+    static JFileChooser createSaveChooser() {
+        File savesDir = new File(LevelManager.SAVES_DIR);
+        savesDir.mkdirs();
+        JFileChooser chooser = new JFileChooser(savesDir);
+        chooser.setFileFilter(new FileNameExtensionFilter(
+                "Pac-Man saves (*." + LevelManager.SAVE_EXTENSION + ")", LevelManager.SAVE_EXTENSION));
+        return chooser;
+    }
+
+    /** Continues the game after a cancelled or failed save, with the keyboard focus back here. */
+    private void resume() {
+        timer.start();
+        requestFocusInWindow();
+    }
+
+    /** Stops the game loop for good. MainFrame calls it when this screen is thrown away. */
+    public void stop() {
+        timer.stop();
     }
 
     /**

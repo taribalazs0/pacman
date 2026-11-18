@@ -3,16 +3,21 @@ package hu.bme.pacman.system;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.io.IOException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import hu.bme.pacman.game.GameEngine;
 
 /**
  * The start screen: four buttons, each asking the owning MainFrame to switch screens.
- * This panel never touches a GameEngine or a file directly.
+ * "Load previous game" also picks the save file and loads it; MainFrame then shows the game.
  */
 public class MainMenu extends JPanel {
     private static final Dimension PANEL_SIZE = new Dimension(480, 560);
@@ -28,9 +33,8 @@ public class MainMenu extends JPanel {
         setBackground(Color.BLACK);
         setPreferredSize(PANEL_SIZE);
 
-        startBtn.addActionListener(event -> frame.startGame(new GamePanel()));
-        // TODO: wire this once GameEngine.loadGameState / a save-file chooser exists.
-        loadGameBtn.addActionListener(event -> { });
+        startBtn.addActionListener(event -> frame.startNewGame());
+        loadGameBtn.addActionListener(event -> loadGame(frame));
         leaderboardBtn.addActionListener(event -> frame.switchScreen(MainFrame.SCREEN_LEADERBOARD));
         editorBtn.addActionListener(event -> frame.switchScreen(MainFrame.SCREEN_EDITOR));
 
@@ -51,6 +55,25 @@ public class MainMenu extends JPanel {
         add(Box.createVerticalStrut(12));
         addCentered(editorBtn);
         add(Box.createVerticalGlue());
+    }
+
+    /**
+     * Lets the player browse for any saved game (the dialog opens in the saves folder) and
+     * continues it. Cancelling does nothing; a bad file only shows an error, the menu stays.
+     */
+    private void loadGame(MainFrame frame) {
+        JFileChooser chooser = GamePanel.createSaveChooser();
+        chooser.setDialogTitle("Load game");
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        try {
+            GameEngine engine = GameEngine.loadGameState(chooser.getSelectedFile().getPath());
+            frame.startGame(engine);
+        } catch (IOException | ClassNotFoundException e) {
+            JOptionPane.showMessageDialog(this, "Could not load the saved game: " + e.getMessage(),
+                    "Load failed", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /** Fixes the button's width/height and centres it on the X axis of this BoxLayout. */
