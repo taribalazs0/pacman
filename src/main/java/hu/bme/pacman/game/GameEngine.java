@@ -39,6 +39,7 @@ public class GameEngine implements Serializable {
     private int lives;
     private int currentLevel;
     private final Labyrinth map;
+    private final Labyrinth originalMap; // we need this for the level advancements
     private final PacMan pacman;
     private final List<Ghost> ghosts;
     // One shared source of randomness for every ghost. Random is Serializable, so it is saved with the game.
@@ -66,6 +67,7 @@ public class GameEngine implements Serializable {
         }
 
         this.map = level.getMap();
+        this.originalMap = this.map.copy();
         this.pacman = level.getPacman();
         // Our own copy: nobody holding the original list can add or remove ghosts behind our back
         this.ghosts = new ArrayList<>(level.getGhosts());
@@ -125,6 +127,10 @@ public class GameEngine implements Serializable {
             ghost.respawn();
         }
         checkCollisions();
+
+        if (!map.hasDotsLeft()) {
+            nextLevel();
+        }
     }
 
     /**
@@ -237,6 +243,28 @@ public class GameEngine implements Serializable {
         // After you die, every ghost goes out of FRIGhtENED
         frightenedStepsLeft = 0;
 
+    }
+    /**
+     * Logic if advancing to the next level
+    */
+    public void nextLevel() {
+        this.currentLevel++;
+
+        for (int x = 0; x < map.getWidth(); x++) {
+            for (int y = 0; y < map.getHeight(); y++) {
+                map.setCell(x, y, originalMap.getCell(x, y));
+            }
+        }
+
+        // reset characters to their original position
+        pacman.resetToStart();
+        for (Ghost g : ghosts) {
+            g.resetToStart();
+        }
+
+        // new level, so new base state
+        frightenedStepsLeft = 0;
+        ghostsEatenInFright = 0;
     }
 
     public boolean isGameOver() {

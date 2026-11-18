@@ -114,17 +114,14 @@ public class GamePanel extends JPanel {
             }
         }
         for (Ghost ghost : engine.getGhosts()) {
-            drawGhost(g,
-                    interpolate(ghost.getPrevX(), ghost.getX(), stepProgress),
-                    interpolate(ghost.getPrevY(), ghost.getY(), stepProgress),
-                    ghost.getState(),
-                    ghost.getPersonality());
+            int ghostX = interpolate(ghost.getPrevX(), ghost.getX(), stepProgress);
+            int ghostY = interpolate(ghost.getPrevY(), ghost.getY(), stepProgress);
+            drawGhost(g, ghostX, ghostY, ghost.getState(), ghost.getPersonality());
         }
         PacMan pacman = engine.getPacman();
-        drawPacman(g,
-                interpolate(pacman.getPrevX(), pacman.getX(), stepProgress),
-                interpolate(pacman.getPrevY(), pacman.getY(), stepProgress),
-                pacman.getDirection());
+        int pacmanX = interpolate(pacman.getPrevX(), pacman.getX(), stepProgress);
+        int pacmanY = interpolate(pacman.getPrevY(), pacman.getY(), stepProgress);
+        drawPacman(g, pacmanX, pacmanY, pacman.getDirection());
     }
 
     private void drawTile(Graphics g, int column, int row, CellType cell) {
