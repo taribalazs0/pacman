@@ -17,15 +17,18 @@ public class MainFrame extends JFrame {
 
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel cardPanel = new JPanel(cardLayout);
+    // Kept as a field (not just added to cardPanel and forgotten) because switchScreen needs
+    // to call refresh() on this exact instance right before the leaderboard becomes visible.
+    private final LeaderboardPanel leaderboardPanel = new LeaderboardPanel(this);
 
     public MainFrame() {
         super("Pac-Man");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         cardPanel.add(new MainMenu(this), SCREEN_MENU);
-        // Placeholders until MapEditor and the leaderboard screen are built out (they are JPanel-less stubs today).
+        // Placeholder until MapEditor is built out (it is a JPanel-less stub today).
         cardPanel.add(new JPanel(), SCREEN_EDITOR);
-        cardPanel.add(new JPanel(), SCREEN_LEADERBOARD);
+        cardPanel.add(leaderboardPanel, SCREEN_LEADERBOARD);
 
         add(cardPanel);
         switchScreen(SCREEN_MENU);
@@ -34,8 +37,18 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    /** Shows the named screen; every other card registered in the CardLayout is hidden. */
+    /**
+     * Shows the named screen; every other card registered in the CardLayout is hidden.
+     *
+     * DESIGN DECISION: switching to the leaderboard screen is the one special case, because
+     * highscores.csv may have changed since this screen was last shown (a game may have just
+     * ended). Refreshing here, in the one place every screen switch goes through, means no
+     * button anywhere else needs to remember to call leaderboardPanel.refresh() itself.
+     */
     public void switchScreen(String screenName) {
+        if (SCREEN_LEADERBOARD.equals(screenName)) {
+            leaderboardPanel.refresh();
+        }
         cardLayout.show(cardPanel, screenName);
     }
 

@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import hu.bme.enums.CellType;
@@ -50,6 +53,16 @@ public final class LevelManager {
     public static final char GHOST_AMBUSHER = 'A';
     public static final char GHOST_WANDERER = 'W';
     public static final char GHOST_CHAOTIC = 'C';
+
+    /**
+     * Where the leaderboard lives, relative to the working directory, the same way
+     * GamePanel.DEFAULT_LEVEL points at "maps/level1.txt". Fixed per the spec's I/O contract
+     * (PlayerName;Score;Date), so this is not something callers get to choose.
+     */
+    public static final String HIGHSCORES_FILE = "highscores.csv";
+
+    /** The separator between the three fields of one highscores.csv row. */
+    private static final String HIGHSCORE_SEPARATOR = ";";
 
     /** Only static methods, so nobody needs an instance. */
     private LevelManager() {
@@ -170,6 +183,98 @@ public final class LevelManager {
         try (BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8)) {
             for (char[] row : picture) {
                 writer.write(row);
+                writer.newLine();
+            }
+        }
+    }
+
+    /**
+     * Reads the current leaderboard, best score first.
+     *
+     * DESIGN DECISION: a missing file is not an error, only means nobody has finished a game
+     * yet (this also covers the very first run, before highscores.csv has ever been written).
+     * An empty leaderboard is returned instead of throwing, because the caller (the UI) should
+     * be able to show "no scores yet" without wrapping every call in a try/catch for that case.
+     * A file that exists but is malformed is still a real I/O-shaped error, so that keeps throwing.
+     *
+     * @param file path of the highscores file (use HIGHSCORES_FILE unless a test needs another path)
+     * @return every entry found, sorted from the highest score to the lowest
+     * @throws IOException if the file exists but cannot be read
+     * @throws IllegalArgumentException if no file name is given, or a line is not "Name;Score;Date"
+     */
+    public static List<HighscoreEntry> loadHighscores(String file) throws IOException {
+        if (file == null || file.isBlank()) {
+            throw new IllegalArgumentException("No highscore file given");
+        }
+
+        Path path = Path.of(file);
+        List<HighscoreEntry> entries = new ArrayList<>();
+        if (Files.notExists(path)) {
+            return entries;
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            String line;
+            int lineNumber = 0;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                line = line.strip();
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                String[] parts = line.split(HIGHSCORE_SEPARATOR);
+                if (parts.length != 3) {
+                    throw new IllegalArgumentException("Line " + lineNumber
+                            + " is not 'PlayerName;Score;Date': " + line);
+                }
+
+                try {
+                    String playerName = parts[0];
+                    int score = Integer.parseInt(parts[1]);
+                    LocalDate date = LocalDate.parse(parts[2]);
+                    entries.add(new HighscoreEntry(playerName, score, date));
+                } catch (NumberFormatException | DateTimeParseException e) {
+                    throw new IllegalArgumentException("Line " + lineNumber
+                            + " has a bad score or date: " + line, e);
+                }
+            }
+        }
+
+        // Best score first; loadFromCSV already guarantees it on disk, this just does not trust that blindly.
+        entries.sort(Comparator.comparingInt(HighscoreEntry::score).reversed());
+        return entries;
+    }
+
+    /**
+     * Adds one entry to the leaderboard and rewrites highscores.csv so it is sorted again,
+     * best score first. Called once, right when a game ends (see GamePanel).
+     *
+     * DESIGN DECISION: there is no separate "sort the file" method; appendHighscore always
+     * leaves the file sorted, so the file on disk is always ready to display as-is, and
+     * loadHighscores for the leaderboard screen never has to sort around a stale file.
+     *
+     * @param file     path of the highscores file (use HIGHSCORES_FILE unless a test needs another path)
+     * @param newEntry the score to add
+     * @throws IOException if the file cannot be read or written
+     * @throws IllegalArgumentException if no file name or entry is given
+     */
+    public static void appendHighscore(String file, HighscoreEntry newEntry) throws IOException {
+        if (file == null || file.isBlank()) {
+            throw new IllegalArgumentException("No highscore file given");
+        }
+        if (newEntry == null) {
+            throw new IllegalArgumentException("No highscore entry given");
+        }
+
+        List<HighscoreEntry> entries = loadHighscores(file);
+        entries.add(newEntry);
+        entries.sort(Comparator.comparingInt(HighscoreEntry::score).reversed());
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8)) {
+            for (HighscoreEntry entry : entries) {
+                writer.write(entry.playerName() + HIGHSCORE_SEPARATOR + entry.score()
+                        + HIGHSCORE_SEPARATOR + entry.date());
                 writer.newLine();
             }
         }

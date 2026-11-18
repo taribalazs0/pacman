@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -36,6 +37,9 @@ public class GamePanel extends JPanel {
     private static final String DEFAULT_LEVEL = "maps/level1.txt";
 
     private final GameEngine engine;
+    // Guards the highscore write: isGameOver() stays true on every tick after the game ends,
+    // so without this flag the same score would be appended to highscores.csv ~60 times a second.
+    private boolean highscoreSaved;
 
     public GamePanel() {
         this(createDefaultEngine());
@@ -74,9 +78,34 @@ public class GamePanel extends JPanel {
         // The engine moves the actors one tile every TICKS_PER_STEP ticks; in between we only redraw.
         Timer timer = new Timer(1000 / GameEngine.TICKS_PER_SECOND, event -> {
             engine.update();
+            if (engine.isGameOver() && !highscoreSaved) {
+                highscoreSaved = true;
+                saveHighscore();
+            }
             repaint();
         });
         timer.start();
+    }
+
+    /**
+     * Writes the just-finished game's score to highscores.csv.
+     *
+     * DESIGN DECISION: the player's name is never asked for on screen; the spec requires
+     * System.getProperty("user.name") instead, so the leaderboard always uses the OS account
+     * name. Saving happens here, in the UI layer, and not inside GameEngine: the model must
+     * never touch files (see createDefaultEngine below, and GameEngine's own saveGameState).
+     *
+     * A failed write here does not rethrow: the game has already ended and is on screen either
+     * way, and a highscores.csv problem (e.g. a locked file) is not worth crashing that screen.
+     */
+    private void saveHighscore() {
+        String playerName = System.getProperty("user.name");
+        HighscoreEntry entry = new HighscoreEntry(playerName, engine.getScore(), LocalDate.now());
+        try {
+            LevelManager.appendHighscore(LevelManager.HIGHSCORES_FILE, entry);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -101,7 +130,8 @@ public class GamePanel extends JPanel {
         double stepProgress = engine.getStepProgress();
         super.paintComponent(g);
         g.setColor(Color.WHITE);
-        g.drawString("Score: " + engine.getScore() + "    Lives: " + engine.getLives(), 12, 24);
+        g.drawString("Score: " + engine.getScore() + "    Lives: " + engine.getLives()
+                + "    Level: " + engine.getCurrentLevel(), 12, 24);
         if (engine.isGameOver()) {
             g.setColor(Color.RED);
             g.drawString("GAME OVER", 300, 24);
