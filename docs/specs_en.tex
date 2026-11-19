@@ -61,12 +61,12 @@ The software's graphical user interface is built using the Java Swing framework,
 % --- 2. Use-Cases ---
 \section{Use-Cases}
 \begin{enumerate}
-    \item \textbf{Starting and controlling the game:} The user can start a new game from the menu and control Pac-Man within the labyrinth using the WASD keyboard keys.
+    \item \textbf{Starting and controlling the game:} The user starts a new game from the menu: a file browser opens in the \texttt{maps} folder, and the user chooses the map to play on (the built-in \texttt{level1.txt} is selected by default). Pac-Man is controlled within the labyrinth using the WASD keyboard keys.
     \item \textbf{Collecting dots and victory:} As Pac-Man passes through the dots, they disappear, and the score increases. If all dots and power pellets are consumed, the player proceeds to the next level: the same maze is played again with all its dots restored, while the score and the remaining lives are kept. At higher levels the Frightened state is shorter, which makes the game harder. The heads-up line always shows the current level.
     \item \textbf{Collision detection with ghosts:} If the character collides with a ghost, it loses a life. If the number of lives reaches zero, the game ends (Game Over). Upon starting a new game, the player always begins at the first level.
     \item \textbf{Saving high-scores:} When the last life is lost, the system records the achieved score in a file. The \textit{Leaderboard} screen of the main menu lists every recorded score, from the best to the worst.
     \item \textbf{Saving game state:} During a game, the \textit{SAVE \& QUIT} button in the heads-up line, or the F5 key, saves the game: the player chooses the file name in a save dialog, then the game returns to the main menu. Any number of games can be saved. \textit{Load previous game} in the main menu opens a file browser, and the chosen save is resumed exactly where it stopped.
-    \item \textbf{Level editor mode:} In addition to the base game, the user has the ability to design their own custom maps, save them, and load previously created maps to play on.
+    \item \textbf{Level editor mode:} In addition to the base game, the user can draw their own maps with \textit{Create map}, save them into the \texttt{maps} folder, and play on them later by choosing them after \textit{Start new game}. Every map has the size of the built-in level ($19 \times 21$ tiles), and the Ghost House in the middle is fixed: the user draws walls, dots, power pellets, and Pac-Man's start tile around it.
 \end{enumerate}
 
 % --- 3. Solution Overview ---
@@ -112,19 +112,27 @@ The software's graphical user interface is built using the Java Swing framework,
 \vspace{0.3cm}
 \textbf{UI and Management Classes}
 \begin{itemize}
-    \item \textbf{MainFrame (JFrame):} The application's main window. A \texttt{CardLayout} switches between the screens: the menu, the active game, the leaderboard, and the editor. \texttt{switchScreen(name)} shows a screen; on the way to the leaderboard it first calls \texttt{LeaderboardPanel.refresh()}, so a score added since the last visit is always listed, and no button has to remember this. \texttt{startNewGame()} and \texttt{startGame(engine)} build the \texttt{GamePanel} and show it; \texttt{quitGame()} goes back to the menu. Only one game screen exists at a time (\texttt{currentGame}): when a game is left, its panel is stopped and removed, not just hidden, because a hidden panel would keep its \texttt{Timer} running in the background. The window is resized (\texttt{pack()}) to the screen being shown.
-    \item \textbf{MainMenu (JPanel):} The start screen: the yellow \textit{PAC-MAN} title and four centred buttons on a black background: \textit{Start new game} (\texttt{startBtn}), \textit{Load previous game} (\texttt{loadGameBtn}), \textit{Leaderboard} (\texttt{leaderboardBtn}), and \textit{Create map} (\texttt{editorBtn}). \textit{Load previous game} opens a file browser in the \texttt{saves} folder, loads the chosen file with \texttt{GameEngine.loadGameState}, and asks the \texttt{MainFrame} to show it; if the file cannot be loaded, an error message is shown and the menu stays.
+    \item \textbf{MainFrame (JFrame):} The application's main window. A \texttt{CardLayout} switches between the screens: the menu, the active game, the leaderboard, and the editor. \texttt{switchScreen(name)} shows a screen; on the way to the leaderboard it first calls \texttt{LeaderboardPanel.refresh()}, so a score added since the last visit is always listed, and no button has to remember this. \texttt{startGame(engine)} builds the \texttt{GamePanel} for a new or a loaded game and shows it; \texttt{quitGame()} goes back to the menu. Only one game screen exists at a time (\texttt{currentGame}): when a game is left, its panel is stopped and removed, not just hidden, because a hidden panel would keep its \texttt{Timer} running in the background. The editor is handled the same way: \texttt{openEditor()} builds a brand new \texttt{MapEditor} each time (so it always starts from an empty map), and \texttt{closeEditor()} removes it. The window is resized (\texttt{pack()}) to the screen being shown.
+    \item \textbf{MainMenu (JPanel):} The start screen: the yellow \textit{PAC-MAN} title and four centred buttons on a black background: \textit{Start new game} (\texttt{startBtn}), \textit{Load previous game} (\texttt{loadGameBtn}), \textit{Leaderboard} (\texttt{leaderboardBtn}), and \textit{Create map} (\texttt{editorBtn}). \textit{Start new game} opens a file browser in the \texttt{maps} folder with \texttt{level1.txt} selected, reads the chosen map with \texttt{LevelManager.loadFromCSV}, and starts a fresh game on it (score 0, 3 lives, level 1); a missing or invalid map only shows an error. Loading the file is the menu's job, so the \texttt{GamePanel} only ever receives a ready \texttt{GameEngine}. \textit{Load previous game} opens a file browser in the \texttt{saves} folder, loads the chosen file with \texttt{GameEngine.loadGameState}, and asks the \texttt{MainFrame} to show it; if the file cannot be loaded, an error message is shown and the menu stays.
     \item \textbf{GamePanel (JPanel):} The active gameplay screen that bridges the Model and View. It turns WASD key presses into \texttt{MoveCommand} objects, receives the game state from the \texttt{GameEngine}, and renders the maze and entities in its \texttt{paintComponent} method. Figures are drawn between their previous and current tile according to the engine's step progress, so movement looks smooth although the model works in whole tiles. A ghost's colour shows its personality (\texttt{TRACKER} red, \texttt{AMBUSHER} pink, \texttt{WANDERER} orange, \texttt{CHAOTIC} cyan, so it stays visible next to the dark blue walls). The state wins over the personality: a frightened ghost is white, and a \texttt{DEAD} ghost is only a small grey dot (its eyes).
     \begin{itemize}
         \item \textbf{Heads-up line:} the score, the remaining lives, the current level, \texttt{GAME OVER} when no life is left, and a \textit{SAVE \& QUIT} button at its right end. The button is a real \texttt{JButton} child component (the panel uses absolute positioning for it), and it cannot take the keyboard focus, otherwise a click would stop the panel from receiving WASD.
-        \item \textbf{Save \& quit:} the button and the F5 key call the same method. It pauses the \texttt{Timer} (a modal dialog still processes Swing events, so the game would keep running behind it), asks for the file in a save dialog, saves, then goes back to the menu. If the player cancels or the write fails, the game simply continues, so no progress is lost.
+        \item \textbf{Save \& quit:} the button and the F5 key call the same method. It pauses the \texttt{Timer} (a modal dialog still processes Swing events, so the game would keep running behind it), asks for the file in a save dialog, saves, then goes back to the menu. If the player cancels or the write fails, the game simply continues, so no progress is lost. After Game Over it goes back to the menu at once, without saving: nothing can happen in a finished game any more, and loading one would add the same score to the leaderboard a second time. The score is already recorded by then, because the \texttt{Timer} tick that ended the game wrote it, and the button's click runs on the same thread (the EDT) only after that tick.
         \item \textbf{High score:} when the game ends, the panel writes the score to \texttt{highscores.csv} exactly once (a flag guards it, because \texttt{isGameOver()} stays true on every later tick). The player's name comes from \texttt{System.getProperty("user.name")}. Writing files is the UI's job; the model never touches files.
         \item The panel does not know the \texttt{MainFrame}: the frame passes in ``go back to the menu'' as a \texttt{Runnable} callback (\texttt{onQuit}), and the panel only reports that the player quit.
     \end{itemize}
     \item \textbf{LeaderboardPanel (JPanel):} A read-only view of \texttt{highscores.csv}: rank, player name, score and date, one row per game, best first, in a monospaced font so the columns line up, with a \textit{Back to menu} button. It never writes the file. \texttt{refresh()} reloads the file each time the screen is shown; the leaderboard only changes between games, so no timer is needed. With no file yet it shows ``No scores yet''.
     \item \textbf{HighscoreEntry (record):} One row of the leaderboard (\texttt{playerName}, \texttt{score}, \texttt{date} as a \texttt{LocalDate}). It only carries data between the \texttt{LevelManager} and the \texttt{LeaderboardPanel}, so it belongs to the UI and I/O package, not to the game model.
-    \item \textbf{MapEditor (JPanel):} A graphical interface with a clickable grid allowing the user to draw custom mazes (placing walls, dots, power pellets, Pac-Man's start tile, and the start tiles of the four ghosts).
-    \item \textbf{LevelManager (Factory):} A dedicated, stateless class that reads a map file into a \texttt{LevelData} (maze, Pac-Man, and ghosts) and writes a \texttt{LevelData} back to a map file in the same format (see Section~\ref{sec:custom_maps}). It also manages the high-score table (\texttt{loadHighscores}, \texttt{appendHighscore}) and holds the names of the fixed files and folders (\texttt{HIGHSCORES\_FILE}, \texttt{SAVES\_DIR}, \texttt{DEFAULT\_SAVE\_NAME}).
+    \item \textbf{MapEditor (JPanel):} The screen for drawing custom maps: a clickable grid in the middle, a tool palette on the right, and \textit{BACK} and \textit{SAVE MAP} buttons on top.
+    \begin{itemize}
+        \item \textbf{Fixed size and Ghost House:} the grid is always $19 \times 21$ tiles (\texttt{MAP\_WIDTH}, \texttt{MAP\_HEIGHT}), the size of \texttt{level1.txt}, and starts empty (black). The Ghost House is copied from \texttt{level1.txt} and stored as a small template in the map-file symbols (\texttt{GHOST\_HOUSE}): the $5 \times 3$ block of columns 7--11 and rows 8--10 (counted from 0) with the \texttt{AMBUSHER}, \texttt{WANDERER} and \texttt{CHAOTIC} ghosts inside, plus the \texttt{TRACKER}'s tile above the top opening. These tiles are locked (\texttt{isLocked}), shown on a dark grey floor, and the four ghosts always start there; the user cannot place ghosts. This differs from the original plan, in which the ghosts' start tiles could also be placed.
+        \item \textbf{Tools:} four toggle buttons in a \texttt{ButtonGroup}, so exactly one is selected: \textit{WALL}, \textit{DOT}, \textit{POWER PELLET}, \textit{PAC-MAN START}. Each button shows a preview drawn with the same code as the grid.
+        \item \textbf{Drawing:} the left mouse button draws the selected tool, on a click or on every tile the mouse crosses while it is held down (\texttt{mousePressed} and \texttt{mouseDragged}); the right mouse button erases a tile back to empty floor. \texttt{SwingUtilities.isLeftMouseButton} / \texttt{isRightMouseButton} are used, because they also work during a drag. Positions outside the grid and locked tiles are ignored.
+        \item \textbf{Pac-Man's start} is a single field (\texttt{pacmanStart}), not a mark in the grid, so there can never be two: placing him again moves him. He may only stand on empty floor, so drawing anything on his tile removes him.
+        \item \textbf{SAVE MAP} checks the map first: Pac-Man's start must be placed, and there must be at least one dot (a map without dots would be ``cleared'' at once, and the engine would go to the next level on every step). It does not check whether every dot can be reached. Then a save dialog opens in the \texttt{maps} folder; \texttt{.txt} is added to a name without it, \texttt{level1.txt} cannot be overwritten, and another existing map is only overwritten after a confirmation. The map is written with \texttt{LevelManager.saveToCSV}, so it has exactly the format the game reads. The editor stays open after saving.
+        \item \textbf{BACK} returns to the menu; if the map has unsaved changes (\texttt{unsaved}), it asks first. Like the \texttt{GamePanel}, the editor does not know the \texttt{MainFrame}: it receives ``go back to the menu'' as a \texttt{Runnable} (\texttt{onBack}).
+    \end{itemize}
+    \item \textbf{LevelManager (Factory):} A dedicated, stateless class that reads a map file into a \texttt{LevelData} (maze, Pac-Man, and ghosts) and writes a \texttt{LevelData} back to a map file in the same format (see Section~\ref{sec:custom_maps}). It also manages the high-score table (\texttt{loadHighscores}, \texttt{appendHighscore}) and holds the names of the fixed files and folders (\texttt{HIGHSCORES\_FILE}, \texttt{MAPS\_DIR}, \texttt{DEFAULT\_MAP\_NAME}, \texttt{SAVES\_DIR}, \texttt{DEFAULT\_SAVE\_NAME}).
 \end{itemize}
 
 
@@ -153,21 +161,22 @@ The software's graphical user interface is built using the Java Swing framework,
     ]
         
         % === UI & MANAGEMENT LAYER ===
-        \node[umlclass] (MainFrame) at (0, 8.4) {
+        \node[umlclass, text width=5.4cm] (MainFrame) at (0, 8.2) {
             \textbf{MainFrame}
             \nodepart{two}
             - cardLayout: CardLayout \\
             - cardPanel: JPanel \\
             - leaderboardPanel: LeaderboardPanel \\
-            - currentGame: GamePanel
+            - currentGame: GamePanel \\
+            - currentEditor: MapEditor
             \nodepart{three}
             + switchScreen(name): void \\
-            + startNewGame(): void \\
             + startGame(engine): void \\
-            + quitGame(): void
+            + quitGame(): void \\
+            + openEditor(), closeEditor(): void
         };
 
-        \node[umlclass] (MainMenu) at (-5.5, 8.4) {
+        \node[umlclass] (MainMenu) at (-5.5, 8.2) {
             \textbf{MainMenu}
             \nodepart{two}
             - startBtn: JButton \\
@@ -175,7 +184,8 @@ The software's graphical user interface is built using the Java Swing framework,
             - editorBtn: JButton \\
             - leaderboardBtn: JButton
             \nodepart{three}
-            - loadGame(frame: MainFrame): void
+            - startNewGame(frame): void \\
+            - loadGame(frame): void
         };
 
         \node[umlclass] (LeaderboardPanel) at (-5.5, 4.0) {
@@ -196,13 +206,16 @@ The software's graphical user interface is built using the Java Swing framework,
             \nodepart{three}
         };
 
-        \node[umlclass] (MapEditor) at (5.5, 8.4) {
+        \node[umlclass] (MapEditor) at (5.5, 8.2) {
             \textbf{MapEditor}
             \nodepart{two}
-            - editGrid: CellType[][] \\
-            - saveBtn: JButton
+            - grid: CellType[][] \\
+            - pacmanStart: Tile \\
+            - ghosts: List$<$Ghost$>$ \\
+            - tool: Tool, unsaved: boolean
             \nodepart{three}
-            + saveCustomMap(): void
+            - editTile(x, y, erase): void \\
+            - saveMap(), back(): void
         };
 
         \node[umlclass] (LevelManager) at (5.5, 4.0) {
@@ -216,7 +229,7 @@ The software's graphical user interface is built using the Java Swing framework,
             + appendHighscore(file, entry): void
         };
 
-        \node[umlclass] (GamePanel) at (0, 4.0) {
+        \node[umlclass] (GamePanel) at (0, 3.6) {
             \textbf{GamePanel}
             \nodepart{two}
             - engine: GameEngine \\
@@ -633,7 +646,7 @@ Therefore, the active game state is saved using \textbf{Java Binary Serializatio
 \subsection*{3. Maps}
 \label{sec:custom_maps}
 \begin{itemize}
-    \item \textbf{Format:} Both the built-in levels and the maps made in the \texttt{MapEditor} are plain-text files that look like the maze itself: one maze row per line, one character per tile. The \texttt{LevelManager} reads them line by line with \texttt{loadFromCSV} and writes them with \texttt{saveToCSV}. The built-in first level is \texttt{maps/level1.txt}; \textit{Start new game} always starts on it.
+    \item \textbf{Format:} Both the built-in levels and the maps made in the \texttt{MapEditor} are plain-text files that look like the maze itself: one maze row per line, one character per tile. The \texttt{LevelManager} reads them line by line with \texttt{loadFromCSV} and writes them with \texttt{saveToCSV}. All maps live in the \texttt{maps} folder (\texttt{LevelManager.MAPS\_DIR}). The built-in level is \texttt{maps/level1.txt}; \textit{Start new game} offers it first, but any map file can be chosen.
     \item \textbf{Symbols:}
 
     \vspace{0.2cm}
@@ -655,7 +668,7 @@ Therefore, the active game state is saved using \textbf{Java Binary Serializatio
     \vspace{0.2cm}
 
     \item \textbf{Why characters instead of \texttt{CellType} names:} A \texttt{CellType} matrix can only describe tiles, so it has no way to record where Pac-Man and the ghosts start. The character picture stores both, stays readable, and can be edited by hand. The ghosts' start tiles also mark the Ghost House, where \texttt{DEAD} ghosts return.
-    \item \textbf{Validation:} Every row must have the same length, exactly one \texttt{P} is required, and any other character (including a space) is rejected with its line and column. Empty lines and spaces at the end of a line are ignored, which is why empty floor is written as \texttt{\_} and not as a space.
+    \item \textbf{Validation:} Every row must have the same length, exactly one \texttt{P} is required, and any other character (including a space) is rejected with its line and column. Empty lines and spaces at the end of a line are ignored, which is why empty floor is written as \texttt{\_} and not as a space. Maps made in the editor additionally always have the size $19 \times 21$, the fixed Ghost House, and at least one dot; hand-written map files may have any size.
     \item \textbf{Example} (a small maze with Pac-Man, a power pellet, and two ghosts):
 
     \vspace{0.1cm}
@@ -666,6 +679,101 @@ Therefore, the active game state is saved using \textbf{Java Binary Serializatio
 #..T_A..#
 #########
 \end{verbatim}
+\end{itemize}
+
+\clearpage
+
+% --- 8. User Manual ---
+\section{User Manual}
+\label{sec:manual}
+
+\subsection*{Starting the program}
+The game needs Java 17 or newer. Build it with \texttt{mvn compile}, then start it from the project folder (the folder that contains \texttt{maps}):
+
+\vspace{0.1cm}
+\texttt{java -cp target/classes hu.bme.pacman.game.Main}
+\vspace{0.1cm}
+
+When it is started from an IDE, the working directory must also be the project folder. Every file the game uses (maps, saves, the leaderboard) is looked up relative to it.
+
+\subsection*{Main menu}
+\begin{itemize}
+    \item \textbf{Start new game:} a file browser opens in the \texttt{maps} folder with the built-in \texttt{level1.txt} selected. Choose a map and press \textit{Open}; the game starts with score 0, 3 lives, on level 1. \textit{Cancel} returns to the menu.
+    \item \textbf{Load previous game:} a file browser opens in the \texttt{saves} folder. Choose a saved game (\texttt{.dat}); it continues exactly where it was saved.
+    \item \textbf{Leaderboard:} the list of finished games.
+    \item \textbf{Create map:} opens the map editor.
+\end{itemize}
+
+\subsection*{Playing}
+\begin{itemize}
+    \item \textbf{Controls:} \texttt{W} up, \texttt{A} left, \texttt{S} down, \texttt{D} right. Pac-Man keeps moving in his direction until he reaches a wall, where he stops. A turn can be pressed early: Pac-Man remembers the last key and turns at the first tile where that way is open, so corners can be taken without stopping.
+    \item \textbf{Goal:} eat every dot and power pellet of the maze. Then the next level starts on the same map with all dots back; the score and the remaining lives are kept.
+    \item \textbf{Heads-up line} (top of the screen): score, remaining lives, current level, \texttt{GAME OVER} when no life is left, and the \textit{SAVE \& QUIT} button.
+    \item \textbf{Points:}
+
+    \vspace{0.1cm}
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Eaten} & \textbf{Points} \\
+        \midrule
+        Dot (small white dot) & 10 \\
+        Power pellet (big white dot) & 50 \\
+        Ghosts after one power pellet & 200, 400, 800, then 1600 for each further ghost \\
+        \bottomrule
+    \end{tabular}
+    \vspace{0.1cm}
+
+    \item \textbf{Ghosts:} they start in the Ghost House in the middle of the maze.
+    \begin{itemize}
+        \item Red (Tracker): heads straight for Pac-Man.
+        \item Pink (Ambusher): aims 4 tiles in front of Pac-Man, to cut him off.
+        \item Orange (Wanderer): chases Pac-Man, but turns back home when it gets closer than 8 tiles.
+        \item Cyan (Chaotic): switches to one of the other three behaviours every 15 seconds.
+    \end{itemize}
+    \item \textbf{Power pellet:} every ghost turns white, turns around, and wanders at half speed; now Pac-Man can eat them. It lasts 6 seconds on levels 1--3, 4 seconds on levels 4--6, 2 seconds on levels 7--10, and 1 second from level 11. An eaten ghost becomes a small grey dot (its eyes): it is harmless, hurries back to the Ghost House, and turns normal there.
+    \item \textbf{Losing a life:} touching a coloured ghost costs a life. Pac-Man and all ghosts go back to their start tiles; the dots eaten so far stay eaten.
+    \item \textbf{Game over:} when the last life is lost, \texttt{GAME OVER} appears and the score is added to the leaderboard automatically, under the name of the user logged into the computer. The game does not ask for a name. \textit{SAVE \& QUIT} (or \texttt{F5}) then returns to the main menu without saving.
+\end{itemize}
+
+\subsection*{Saving and loading a game}
+\begin{itemize}
+    \item Press \textit{SAVE \& QUIT} or \texttt{F5} at any time before \texttt{GAME OVER}. The game pauses and a save dialog opens in the \texttt{saves} folder, offering the name \texttt{savestate.dat}. Any name can be typed; \texttt{.dat} is added if it is missing, and saving over an existing file asks for confirmation. After saving, the game returns to the main menu.
+    \item If the dialog is cancelled, or saving fails, the game simply continues.
+    \item Any number of games can be kept in the \texttt{saves} folder; \textit{Load previous game} can open any of them. A turn pressed just before saving is not kept: after loading, press the direction again.
+    \item A save made with an older version of the program may not load after the program has changed; an error message is shown, and the menu stays open.
+\end{itemize}
+
+\subsection*{Leaderboard}
+Every finished game is listed with its rank, player name, score, and date, from the best score to the worst. \textit{Back to menu} returns to the main menu.
+
+\subsection*{Map editor}
+\begin{itemize}
+    \item \textbf{The grid:} the editor opens with an empty, black map of $19 \times 21$ tiles, the size of the built-in level; other sizes are not possible. The Ghost House in the middle (dark grey tiles with the four ghosts) is fixed: it cannot be drawn over, and ghosts cannot be placed anywhere else.
+    \item \textbf{Tools} (right side): \textit{WALL} (blue), \textit{DOT} (small white dot), \textit{POWER PELLET} (big white dot), and \textit{PAC-MAN START} (Pac-Man's starting tile). Click a tool to select it.
+    \item \textbf{Drawing:} click a tile with the \textbf{left} mouse button to draw the selected tool on it, or hold the button down and drag to draw on every tile the mouse passes over.
+    \item \textbf{Erasing:} click a tile with the \textbf{right} mouse button (or drag with it) to make it empty floor again.
+    \item \textbf{Pac-Man's start:} there is always at most one. Placing it on another tile moves it there; drawing or erasing over it removes it.
+    \item \textbf{Border:} the tiles outside the grid count as walls, so nothing can leave the map even without a frame of walls; drawing a frame is optional.
+    \item \textbf{SAVE MAP:} the map can only be saved if Pac-Man's start is placed and there is at least one dot; otherwise a message tells what is missing. A save dialog opens in the \texttt{maps} folder; type a name (\texttt{.txt} is added if it is missing). \texttt{level1.txt} cannot be overwritten, and saving over another map asks for confirmation. The editor stays open after saving.
+    \item \textbf{BACK:} returns to the main menu. If the map has changes that are not saved yet, it asks first.
+    \item \textbf{Playing on the new map:} choose it in the file browser after \textit{Start new game}.
+    \item \textbf{Tips:} the editor does not check whether Pac-Man can reach every dot. A level with an unreachable dot can never be finished, so leave a path to every dot. Also keep the tiles around the Ghost House openings free, otherwise the ghosts cannot come out.
+\end{itemize}
+
+\subsection*{Files of the game}
+\begin{tabular}{@{}ll@{}}
+    \toprule
+    \textbf{File or folder} & \textbf{Content} \\
+    \midrule
+    \texttt{maps/} & Maps (\texttt{.txt}): the built-in \texttt{level1.txt} and the maps drawn in the editor \\
+    \texttt{saves/} & Saved games (\texttt{.dat}) \\
+    \texttt{highscores.csv} & The leaderboard, one finished game per line \\
+    \bottomrule
+\end{tabular}
+
+\subsection*{Known limitations}
+\begin{itemize}
+    \item Closing the window ends the program at once, without asking about an unsaved game or map.
 \end{itemize}
 
 \end{document}

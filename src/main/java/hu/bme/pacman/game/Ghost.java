@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * One enemy. It already has a tile, a personality, and a state,
- * but it does not walk yet. Chasing, scattering, and fleeing come later.
+ * One enemy: its tile, its personality, its state, and the strategy that picks its chase target.
+ * Every step the engine lets it choose a direction by its state: towards the strategy's target
+ * while chasing, at random while frightened, and back to its start tile while dead.
  */
 public class Ghost extends GameObject {
     private GhostState state;

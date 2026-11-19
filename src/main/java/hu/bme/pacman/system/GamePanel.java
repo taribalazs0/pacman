@@ -8,8 +8,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.time.LocalDate;
 
 import javax.swing.JButton;
@@ -26,7 +24,6 @@ import hu.bme.enums.GhostState;
 import hu.bme.pacman.game.GameEngine;
 import hu.bme.pacman.game.Ghost;
 import hu.bme.pacman.game.Labyrinth;
-import hu.bme.pacman.game.LevelData;
 import hu.bme.pacman.game.MoveCommand;
 import hu.bme.pacman.game.PacMan;
 
@@ -40,9 +37,8 @@ public class GamePanel extends JPanel {
     private static final int HUD = 36;
     /** Extra pixels on top of the SAVE & QUIT button's measured width (see the constructor). */
     private static final int BUTTON_SPARE_WIDTH = 24;
-
-    // Default level/map
-    private static final String DEFAULT_LEVEL = "maps/level1.txt";
+    /** Colour of a wall tile. Package-private: the MapEditor draws walls the same way. */
+    static final Color WALL_COLOR = new Color(33, 33, 222);
 
     private final GameEngine engine;
     // Guards the highscore write: isGameOver() stays true on every tick after the game ends,
@@ -55,12 +51,10 @@ public class GamePanel extends JPanel {
     // in "go back to the menu" as a callback, so this panel only reports that the player quit.
     private final Runnable onQuit;
 
-    /** A new game on the default map. */
-    public GamePanel(Runnable onQuit) {
-        this(createDefaultEngine(), onQuit);
-    }
-
-    /** A game on an existing engine, e.g. one loaded from a save file. */
+    /**
+     * A game on an existing engine: a new one built from the map chosen in the menu,
+     * or one loaded from a save file. Loading files is the menu's job, not this panel's.
+     */
     public GamePanel(GameEngine engine, Runnable onQuit) {
         this.engine = engine;
         this.onQuit = onQuit;
@@ -134,7 +128,7 @@ public class GamePanel extends JPanel {
      * DESIGN DECISION: the player's name is never asked for on screen; the spec requires
      * System.getProperty("user.name") instead, so the leaderboard always uses the OS account
      * name. Saving happens here, in the UI layer, and not inside GameEngine: the model must
-     * never touch files (see createDefaultEngine below, and GameEngine's own saveGameState).
+     * never touch files (the only exception is GameEngine's own saveGameState).
      *
      * A failed write here does not rethrow: the game has already ended and is on screen either
      * way, and a highscores.csv problem (e.g. a locked file) is not worth crashing that screen.
@@ -154,11 +148,21 @@ public class GamePanel extends JPanel {
      * button call this, so the two can never behave differently.
      * Cancelling the dialog, or a failed write, resumes the game instead: quitting then would
      * throw the player's progress away.
+     * After Game Over it goes straight back to the menu, without the dialog: see below.
      */
     private void saveAndQuit() {
         // A modal dialog still runs Swing events while it is open, Timer ticks included,
         // so without stopping the timer the ghosts would keep playing behind the dialog.
         timer.stop();
+
+        // A finished game is not worth saving: nothing can happen in it any more, and loading it
+        // would only add the same score to the leaderboard again. The score is already recorded:
+        // the timer tick that ended the game wrote it, before any click could be handled, because
+        // both the Timer and the button run on the same thread (the EDT), one event after the other.
+        if (engine.isGameOver()) {
+            onQuit.run();
+            return;
+        }
 
         File file = chooseSaveFile();
         if (file == null) {
@@ -280,7 +284,7 @@ public class GamePanel extends JPanel {
         int pixelY = HUD + row * TILE;
         switch (cell) {
             case WALL -> {
-                g.setColor(new Color(33, 33, 222));
+                g.setColor(WALL_COLOR);
                 g.fillRect(pixelX, pixelY, TILE, TILE);
             }
             case DOT -> {
@@ -341,8 +345,9 @@ public class GamePanel extends JPanel {
 
     /**
      * The colour of each personality.
+     * Package-private: the MapEditor shows the fixed ghosts in the same colours.
      */
-    private static Color colorOf(GhostPersonality personality) {
+    static Color colorOf(GhostPersonality personality) {
         return switch (personality) {
             case TRACKER -> Color.RED;
             case AMBUSHER -> Color.PINK;
@@ -350,21 +355,4 @@ public class GamePanel extends JPanel {
             case CHAOTIC -> Color.CYAN;
         };
     }
-
-    /**
-    *  Loads the default map and builds a new game on it.
-    * Loading belongs to the UI side; the model never touches files.
-    * static: it runs inside this(...), before the GamePanel object exists.
-    */
-    private static GameEngine createDefaultEngine() {
-        try {
-            LevelData level = LevelManager.loadFromCSV(DEFAULT_LEVEL);
-            return new GameEngine(level);
-        } catch (IOException e) {
-            throw new UncheckedIOException(
-                "Could not load the default map: " + Path.of(DEFAULT_LEVEL).toAbsolutePath(), e);
-        }
-}
-
-
 }

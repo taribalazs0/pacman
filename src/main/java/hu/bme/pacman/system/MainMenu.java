@@ -3,6 +3,7 @@ package hu.bme.pacman.system;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.io.File;
 import java.io.IOException;
 
 import javax.swing.Box;
@@ -14,10 +15,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import hu.bme.pacman.game.GameEngine;
+import hu.bme.pacman.game.LevelData;
 
 /**
  * The start screen: four buttons, each asking the owning MainFrame to switch screens.
- * "Load previous game" also picks the save file and loads it; MainFrame then shows the game.
+ * "Start new game" and "Load previous game" also pick and load the file; MainFrame then shows the game.
  */
 public class MainMenu extends JPanel {
     private static final Dimension PANEL_SIZE = new Dimension(480, 560);
@@ -33,10 +35,10 @@ public class MainMenu extends JPanel {
         setBackground(Color.BLACK);
         setPreferredSize(PANEL_SIZE);
 
-        startBtn.addActionListener(event -> frame.startNewGame());
+        startBtn.addActionListener(event -> startNewGame(frame));
         loadGameBtn.addActionListener(event -> loadGame(frame));
         leaderboardBtn.addActionListener(event -> frame.switchScreen(MainFrame.SCREEN_LEADERBOARD));
-        editorBtn.addActionListener(event -> frame.switchScreen(MainFrame.SCREEN_EDITOR));
+        editorBtn.addActionListener(event -> frame.openEditor());
 
         JLabel title = new JLabel("PAC-MAN");
         title.setForeground(Color.YELLOW);
@@ -55,6 +57,28 @@ public class MainMenu extends JPanel {
         add(Box.createVerticalStrut(12));
         addCentered(editorBtn);
         add(Box.createVerticalGlue());
+    }
+
+    /**
+     * "Start new game": the player picks a map file (the dialog opens in the maps folder with
+     * level1.txt selected), then a fresh game starts on it: score 0, 3 lives, level 1.
+     * Cancelling does nothing; a missing or invalid map only shows an error, the menu stays.
+     */
+    private void startNewGame(MainFrame frame) {
+        JFileChooser chooser = MapEditor.createMapChooser();
+        chooser.setDialogTitle("Choose a map");
+        chooser.setSelectedFile(new File(LevelManager.MAPS_DIR, LevelManager.DEFAULT_MAP_NAME));
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        try {
+            LevelData level = LevelManager.loadFromCSV(chooser.getSelectedFile().getPath());
+            frame.startGame(new GameEngine(level));
+        } catch (IOException | IllegalArgumentException e) {
+            // IllegalArgumentException: the file exists but is not a valid map (the message names the line)
+            JOptionPane.showMessageDialog(this, "Could not load the map: " + e.getMessage(),
+                    "Load failed", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**

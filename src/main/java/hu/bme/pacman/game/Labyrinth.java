@@ -104,8 +104,4 @@ public class Labyrinth implements Serializable {
         }
         return new Labyrinth(newGrid);
     }
-
-    public void loadMap(String filename) {
-        throw new UnsupportedOperationException("Reading a map file comes later, in LevelManager");
-    }
 }

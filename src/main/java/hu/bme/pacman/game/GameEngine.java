@@ -123,7 +123,7 @@ public class GameEngine implements Serializable {
                 case DEAD -> ghost.chooseDirectionTowards(map, ghost.getStartX(), ghost.getStartY());
                 // A frightened ghost flees randomly
                 case FRIGHTENED -> ghost.chooseDirection(map, random);
-                // CHASE (and SCATTER until it exists): the personality's strategy picks the target
+                // CHASE (the only other state that is ever set): the personality's strategy picks the target
                 default -> ghost.chooseChaseDirection(map, pacman, random);
             }
             stepIfOpen(ghost);

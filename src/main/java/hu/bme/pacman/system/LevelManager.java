@@ -2,9 +2,7 @@ package hu.bme.pacman.system;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,10 +56,17 @@ public final class LevelManager {
 
     /**
      * Where the leaderboard lives, relative to the working directory, the same way
-     * GamePanel.DEFAULT_LEVEL points at "maps/level1.txt". Fixed per the spec's I/O contract
+     * MAPS_DIR points at "maps". Fixed per the spec's I/O contract
      * (PlayerName;Score;Date), so this is not something callers get to choose.
      */
     public static final String HIGHSCORES_FILE = "highscores.csv";
+
+    /** Folder of the map files: the built-in level and the maps saved by the MapEditor. */
+    public static final String MAPS_DIR = "maps";
+    /** The built-in map. Offered first when a new game starts; the editor never overwrites it. */
+    public static final String DEFAULT_MAP_NAME = "level1.txt";
+    /** Extension of a map file, without the dot. */
+    public static final String MAP_EXTENSION = "txt";
 
     /** The separator between the three fields of one highscores.csv row. */
     private static final String HIGHSCORE_SEPARATOR = ";";
@@ -331,8 +336,11 @@ public final class LevelManager {
         };
     }
 
-    /** Which personality a ghost letter stands for. */
-    private static GhostPersonality personalityOf(char symbol) {
+    /**
+     * Which personality a ghost letter stands for.
+     * Package-private: the MapEditor reads its fixed ghost house with the same letters.
+     */
+    static GhostPersonality personalityOf(char symbol) {
         return switch (symbol) {
             case GHOST_TRACKER -> GhostPersonality.TRACKER;
             case GHOST_AMBUSHER -> GhostPersonality.AMBUSHER;
@@ -340,15 +348,5 @@ public final class LevelManager {
             case GHOST_CHAOTIC -> GhostPersonality.CHAOTIC;
             default -> throw new IllegalArgumentException("Not a ghost symbol: " + symbol);
         };
-    }
-
-    public void saveGameState(String file) throws IOException {
-        try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            // this serializes the whole GameEngine, with all available attributes
-            oos.writeObject(this);
-        }
-        catch(IOException e) {
-            System.out.println(e);
-        }
     }
 }

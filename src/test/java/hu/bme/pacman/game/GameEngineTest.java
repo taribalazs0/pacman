@@ -34,9 +34,9 @@ class GameEngineTest {
     @Test
     void steppingOnADotRaisesTheScoreAndClearsTheTile() {
         CellType[][] grid = {
-                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL},
-                {CellType.WALL, CellType.EMPTY, CellType.DOT, CellType.WALL},
-                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL}
+                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL},
+                {CellType.WALL, CellType.EMPTY, CellType.DOT, CellType.DOT, CellType.WALL},
+                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL}
         };
         Labyrinth map = new Labyrinth(grid);
         PacMan pacman = new PacMan(1, 1);
@@ -54,9 +54,9 @@ class GameEngineTest {
     @Test
     void aBlockedTurnDoesNotCancelTheCurrentStep() {
         CellType[][] grid = {
-                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL},
-                {CellType.WALL, CellType.EMPTY, CellType.EMPTY, CellType.WALL},
-                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL}
+                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL},
+                {CellType.WALL, CellType.EMPTY, CellType.EMPTY, CellType.DOT, CellType.WALL},
+                {CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL, CellType.WALL}
         };
         Labyrinth map = new Labyrinth(grid);
         PacMan pacman = new PacMan(1, 1);

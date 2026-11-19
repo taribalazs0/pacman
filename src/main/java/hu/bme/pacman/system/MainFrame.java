@@ -24,14 +24,15 @@ public class MainFrame extends JFrame {
     private final LeaderboardPanel leaderboardPanel = new LeaderboardPanel(this);
     // The running game screen, or null while no game is open
     private GamePanel currentGame;
+    // The open map editor, or null while it is closed
+    private MapEditor currentEditor;
 
     public MainFrame() {
         super("Pac-Man");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         cardPanel.add(new MainMenu(this), SCREEN_MENU);
-        // Placeholder until MapEditor is built out (it is a JPanel-less stub today).
-        cardPanel.add(new JPanel(), SCREEN_EDITOR);
+        // The game and the editor screens are added only while they are open (see showGame, openEditor)
         cardPanel.add(leaderboardPanel, SCREEN_LEADERBOARD);
 
         add(cardPanel);
@@ -56,14 +57,38 @@ public class MainFrame extends JFrame {
         cardLayout.show(cardPanel, screenName);
     }
 
-    /** "Start new game": a fresh game on the default map. */
-    public void startNewGame() {
-        showGame(new GamePanel(this::quitGame));
-    }
-
-    /** "Load previous game": continues a game loaded from a save file. */
+    /**
+     * Shows a game: a new one built from the map chosen in "Start new game",
+     * or one loaded from a save file in "Load previous game".
+     */
     public void startGame(GameEngine engine) {
         showGame(new GamePanel(engine, this::quitGame));
+    }
+
+    /**
+     * "Create map": shows a brand new editor. Building a new one each time, like a new
+     * GamePanel for every game, means the editor always starts from an empty black map.
+     */
+    public void openEditor() {
+        removeCurrentEditor();
+        currentEditor = new MapEditor(this::closeEditor);
+        cardPanel.add(currentEditor, SCREEN_EDITOR);
+        switchScreen(SCREEN_EDITOR);
+        pack();
+    }
+
+    /** The editor's BACK button: removes the editor and goes back to the menu. */
+    public void closeEditor() {
+        removeCurrentEditor();
+        switchScreen(SCREEN_MENU);
+        pack();
+    }
+
+    private void removeCurrentEditor() {
+        if (currentEditor != null) {
+            cardPanel.remove(currentEditor);
+            currentEditor = null;
+        }
     }
 
     /**
