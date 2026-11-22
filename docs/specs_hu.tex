@@ -92,7 +92,7 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
 
 \textbf{A játék magja (modell)}
 \begin{itemize}
-    \item \textbf{GameEngine:} A játék központi vezérlője. Ő futtatja a játékciklust (lásd: \ref{sec:game_loop}.~fejezet), frissíti a játék állapotát (pozíciók, ütközések), és kezeli a pontszámot, a megmaradt életeket és az aktuális szintet (\texttt{currentLevel}). Az aktív játékállás mentése és betöltése is az ő feladata (a \texttt{java.io.Serializable} segítségével). A szint növekedésével a szellemek ijedt állapotának időtartama fokozatosan csökken, így nő a nehézség; Pac-Man és a szellemek normál sebessége minden szinten ugyanaz. Új játék a \texttt{LevelManager} által felépített \texttt{LevelData} objektumból indul, mindig 0 ponttal, 3 élettel és az 1. szinten. A motor egyetlen, közös \texttt{java.util.Random} példányt használ a szellemek véletlen döntéseihez; egy második konstruktor egy megadott \texttt{Random}-ot fogad, így a tesztek rögzített seeddel (kezdőértékkel) minden futáskor ugyanazokat a döntéseket kapják.
+    \item \textbf{GameEngine:} A játék központi vezérlője. Ő adja a játékciklus egy tickjét (\texttt{update()}), amelyet a \texttt{GamePanel} Swing \texttt{Timer}-e hív meg (lásd: \ref{sec:game_loop}.~fejezet), frissíti a játék állapotát (pozíciók, ütközések), és kezeli a pontszámot, a megmaradt életeket és az aktuális szintet (\texttt{currentLevel}). Az aktív játékállás mentése és betöltése is az ő feladata (a \texttt{java.io.Serializable} segítségével). A szint növekedésével a szellemek ijedt állapotának időtartama fokozatosan csökken, így nő a nehézség; Pac-Man és a szellemek normál sebessége minden szinten ugyanaz. Új játék a \texttt{LevelManager} által felépített \texttt{LevelData} objektumból indul, mindig 0 ponttal, 3 élettel és az 1. szinten. A motor egyetlen, közös \texttt{java.util.Random} példányt használ a szellemek véletlen döntéseihez; egy második konstruktor egy megadott \texttt{Random}-ot fogad, így a tesztek rögzített seeddel (kezdőértékkel) minden futáskor ugyanazokat a döntéseket kapják.
 
     \textbf{Szintlépés:} Létrehozáskor a motor eltesz egy érintetlen másolatot a labirintusról (\texttt{originalMap}, a \texttt{Labyrinth.copy()} készíti). Ha már nem maradt pötty vagy power pellet (a \texttt{Labyrinth.hasDotsLeft()} \texttt{false}-t ad), a lépés végén a \texttt{nextLevel()} fut le:
     \begin{itemize}
@@ -297,7 +297,7 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
             \nodepart{two}
             \# x, y: int (mező) \\
             \# speed: int \\
-            \# direction: Direction \\
+            \# direction: Directions \\
             - startX, startY: int \\
             - prevX, prevY: int
             \nodepart{three}
@@ -333,14 +333,13 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
             - strategy: GhostStrategy \\
             - targetX, targetY: int
             \nodepart{three}
-            + possibleDirections(map): List$<$Direction$>$ \\
+            + possibleDirections(map): List$<$Directions$>$ \\
             + chooseDirection(map, random): void \\
             + chooseDirectionTowards(map, x, y): void \\
             + chooseChaseDirection(map, pacman, random): void \\
             + frighten(), calmDown(): void \\
             + eaten(), respawn(): void \\
-            + resetToStart(): void \textit{(override)} \\
-            + updateState(): void
+            + resetToStart(): void \textit{(override)}
         };
 
         \node[umlclass] (MoveCommand) at (-8, -19.1) {
@@ -348,7 +347,7 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
             \nodepart{two}
             - pacman: PacMan \\
             - map: Labyrinth \\
-            - direction: Direction
+            - direction: Directions
             \nodepart{three}
             + execute(): void
         };
@@ -401,18 +400,18 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
             WALL \\ DOT \\ POWERPELLET \\ EMPTY
         };
 
-        \node[umlenum] (Direction) at (10.5, -2.5) {
-            \textbf{\guillemotleft enum\guillemotright \\ Direction}
+        \node[umlenum] (Directions) at (10.5, -2.5) {
+            \textbf{\guillemotleft enum\guillemotright \\ Directions}
             \nodepart{two}
             UP \\ DOWN \\ LEFT \\ RIGHT \\ IDLE \\
-            + opposite(): Direction \\
+            + opposite(): Directions \\
             + dx(), dy(): int
         };
 
         \node[umlenum] (GhostState) at (10.5, -6.5) {
             \textbf{\guillemotleft enum\guillemotright \\ GhostState}
             \nodepart{two}
-            CHASE \\ SCATTER \\ FRIGHTENED \\ DEAD
+            CHASE \\ FRIGHTENED \\ DEAD
         };
 
         \node[umlenum] (GhostPersonality) at (10.5, -10.5) {
@@ -538,12 +537,12 @@ Annak érdekében, hogy a kód megfeleljen az egyetemi elvárásoknak, és jól 
     \textbf{A személyiségek célmezői:}
     \begin{itemize}
         \item \textbf{TRACKER} (piros): pontosan Pac-Man saját mezője; bárhová követi. \textit{(megvalósítva: \texttt{TrackerStrategy})}
-        \item \textbf{AMBUSHER} (rózsaszín): 4 mezővel Pac-Man előtt, abban az irányban, amerre néz, a \texttt{Direction.dx()} és \texttt{dy()} segítségével számolva (lépésenként $-1$, $0$ vagy $+1$). Ha Pac-Man egy helyben áll, a célmező a saját mezője. \textit{(megvalósítva: \texttt{AmbusherStrategy})}
+        \item \textbf{AMBUSHER} (rózsaszín): 4 mezővel Pac-Man előtt, abban az irányban, amerre néz, a \texttt{Directions.dx()} és \texttt{dy()} segítségével számolva (lépésenként $-1$, $0$ vagy $+1$). Ha Pac-Man egy helyben áll, a célmező a saját mezője. \textit{(megvalósítva: \texttt{AmbusherStrategy})}
         \item \textbf{WANDERER} (narancssárga): Pac-Man mezője, de a saját, szellemházbeli kezdőmezője, ha 8 mezőnél közelebb kerül hozzá (a távolság négyzete kisebb, mint $8^2 = 64$; a pontosan 8 mezőre lévő szellem még üldöz). Amint újra legalább 8 mezőre van, ismét Pac-Man felé fordul, így folyamatosan váltogat az üldözés és a visszavonulás között. \textit{(megvalósítva: \texttt{WandererStrategy})}
         \item \textbf{CHAOTIC} (cián): tartalmazza a másik három stratégiát, és 15 másodpercenként ($15 \cdot \texttt{TICKS\_PER\_SECOND} / \texttt{TICKS\_PER\_STEP} = 90$ lépés) véletlenszerűen átvált valamelyikre (akár ugyanarra is). A visszaszámlálás a \texttt{target()} hívásaiban mér, üldözés közben lépésenként egyben, így szünetel, amíg a szellem ijedt vagy halott: a 15 másodperc 15 másodpercnyi üldözést jelent. Minden kaotikus szellemnek saját példánya van, a \texttt{Random} pedig átadható a konstruktornak, így a tesztek minden futáskor ugyanazokat a váltásokat kapják. \textit{(megvalósítva: \texttt{ChaoticStrategy})}
     \end{itemize}
     Mind a négy személyiségnek megvan a stratégiája; egy stratégia nélküli szellem továbbra is véletlenszerűen választana. Ennek a tervnek a Chaotic szellem az oka: egy objektum futás közben nem változtathatja meg az osztályát, egy szellem viszont lecserélheti a stratégiaobjektumát. A \texttt{ChaoticStrategy} saját állapotot tart nyilván (a 15 másodperces időzítőt és az éppen aktív stratégiát), és a másik három között vált. Mivel minden szellem a stratégiájával együtt mentődik, a stratégiaosztályoknak meg kell valósítaniuk a \texttt{java.io.Serializable} interfészt.
-    \item \textbf{A szellemek viselkedése (véges állapotgép, FSM):} A szellemek aktuális üzemmódját a \texttt{GhostState} enum kezeli (\texttt{CHASE}, \texttt{SCATTER}, \texttt{FRIGHTENED}, \texttt{DEAD}). Az állapotok közötti átmeneteket szigorúan a játék eseményei irányítják, ahogy az állapotgép-ábra (\ref{fig:ghost_fsm}.~ábra) mutatja. Minden eseménynek saját metódusa van a \texttt{Ghost} osztályban, egyetlen, bármilyen állapotot elfogadó publikus setter helyett, így a kód élről élre követi az ábrát:
+    \item \textbf{A szellemek viselkedése (véges állapotgép, FSM):} A szellemek aktuális üzemmódját a \texttt{GhostState} enum kezeli (\texttt{CHASE}, \texttt{FRIGHTENED}, \texttt{DEAD}). Az állapotok közötti átmeneteket szigorúan a játék eseményei irányítják, ahogy az állapotgép-ábra (\ref{fig:ghost_fsm}.~ábra) mutatja. Minden eseménynek saját metódusa van a \texttt{Ghost} osztályban, egyetlen, bármilyen állapotot elfogadó publikus setter helyett, így a kód élről élre követi az ábrát:
 
     \vspace{0.1cm}
     \begin{tabular}{@{}lll@{}}
@@ -558,21 +557,20 @@ Annak érdekében, hogy a kód megfeleljen az egyetemi elvárásoknak, és jól 
     \end{tabular}
     \vspace{0.1cm}
 
-    Minden metódus maga ellenőrzi a saját feltételét, és ha az nem teljesül, nem csinál semmit, így rossz állapotban meghívni ártalmatlan (például a \texttt{calmDown()} békén hagyja a \texttt{DEAD} szellemet). A motor csak jelzi az eseményt; a szellem dönti el, hogy vonatkozik-e rá. Pac-Man életvesztése után a \texttt{resetToStart()} minden szellemet visszaállít \texttt{CHASE}-re; ez teljes újraindítás, nem az ábra egyik éle. A paraméter nélküli \texttt{updateState()} kezeli az időzített \texttt{CHASE}/\texttt{SCATTER} váltásokat.
+    Minden metódus maga ellenőrzi a saját feltételét, és ha az nem teljesül, nem csinál semmit, így rossz állapotban meghívni ártalmatlan (például a \texttt{calmDown()} békén hagyja a \texttt{DEAD} szellemet). A motor csak jelzi az eseményt; a szellem dönti el, hogy vonatkozik-e rá. Pac-Man életvesztése után a \texttt{resetToStart()} minden szellemet visszaállít \texttt{CHASE}-re; ez teljes újraindítás, nem az ábra egyik éle.
     
     \vspace{0.2cm}
     \textbf{A szellemállapotok jelentése:}
     \begin{itemize}
         \item \textbf{CHASE:} Minden szellem a saját mesterséges intelligenciájával célozza és szorítja sarokba Pac-Mant.
-        \item \textbf{SCATTER:} A szellemek ideiglenesen abbahagyják Pac-Man üldözését, és visszavonulnak, hogy a labirintus saját, kijelölt sarkában járőrözzenek.
         \item \textbf{FRIGHTENED:} Miután Pac-Man megevett egy power pelletet, a szellemek fehérek lesznek, egyszer megfordulnak, véletlenszerűen, fele sebességgel mozognak, és megehetők lesznek. Egy már ijedt szellem új power pelletre nem fordul meg újra, a \texttt{DEAD} szellemre pedig nincs hatással.
         \item \textbf{DEAD (megevett):} A szellemből csak egy pár lebegő szem marad (egy kis szürke pont), és teljes sebességgel tér vissza a központi szellemházban lévő kezdőmezőjére, célmező-alapú útvonalválasztással. Pac-Manre ártalmatlan, és nem reagál az új power pelletekre. A kezdőmezőjén újra \texttt{CHASE} lesz, és visszakapja a színét.
     \end{itemize}
 
-    \item \textbf{A játékos bemenete (Command minta és bemenetpufferelés):} A mozgási műveleteket \texttt{MoveCommand} objektumok zárják magukba, amelyek egy közös, \texttt{execute()} metódust tartalmazó \texttt{Command} interfészt valósítanak meg. Irányonként külön osztály helyett egyetlen \texttt{MoveCommand} tárolja a kívánt \texttt{Direction}-t; a \texttt{GamePanel} minden WASD billentyűlenyomáshoz létrehoz egyet, és a \texttt{PacMan} példányban puffereli (\texttt{currentCommand}). A parancs minden lépésben lefut: ha a kívánt irányban szabad a mező, Pac-Man elfordul; ha fal van ott, megtartja az aktuális irányát, és a következő lépésben újra próbálkozik. Ez kifejezetten a \textit{kanyar-előpufferelés} (input buffering) mechanikát valósítja meg: a kicsit korán lenyomott kanyar az első olyan mezőn megtörténik, ahol lehetséges.
-    \item \textbf{Modell–nézet–vezérlő (MVC) architektúra:} A játék logikai állapotát (modell) szigorúan el kell választani a Swinges megjelenítéstől (nézet). A logikai entitások, például a \texttt{PacMan} vagy a \texttt{Ghost}, nem tartalmazhatnak felhasználói felülettel kapcsolatos kódot, \texttt{javax.swing} importot vagy \texttt{java.awt.Graphics} hivatkozást.
+    \item \textbf{A játékos bemenete (Command minta és bemenetpufferelés):} A mozgási műveleteket \texttt{MoveCommand} objektumok zárják magukba, amelyek egy közös, \texttt{execute()} metódust tartalmazó \texttt{Command} interfészt valósítanak meg. Irányonként külön osztály helyett egyetlen \texttt{MoveCommand} tárolja a kívánt \texttt{Directions}-t; a \texttt{GamePanel} minden WASD billentyűlenyomáshoz létrehoz egyet, és a \texttt{PacMan} példányban puffereli (\texttt{currentCommand}). A parancs minden lépésben lefut: ha a kívánt irányban szabad a mező, Pac-Man elfordul; ha fal van ott, megtartja az aktuális irányát, és a következő lépésben újra próbálkozik. Ez kifejezetten a \textit{kanyar-előpufferelés} (input buffering) mechanikát valósítja meg: a kicsit korán lenyomott kanyar az első olyan mezőn megtörténik, ahol lehetséges.
+    \item \textbf{Modell–nézet–vezérlő (MVC) architektúra:} A játék logikai állapotát (modell) szigorúan el kell választani a Swinges megjelenítéstől (nézet). A logikai entitások, például a \texttt{PacMan} vagy a \texttt{Ghost}, nem tartalmazhatnak felhasználói felülettel kapcsolatos kódot, \texttt{javax.swing} importot vagy \texttt{java.awt.Graphics} hivatkozást. A modell csomagjának (\texttt{hu.bme.pacman.game}) egyetlen osztálya sem importál Swinget vagy AWT-t; ezért a belépési pont, a \texttt{Main}, amely a \texttt{SwingUtilities.invokeLater} hívással az Event Dispatch Thread szálon indítja a \texttt{MainFrame}-et, a felhasználói felület csomagjában (\texttt{hu.bme.pacman.system}) van.
     \item \textbf{Factory (gyártó) minta:} Egy pálya pályafájlból való létrehozását a külön erre szolgáló \texttt{LevelManager} osztály végzi. Feldolgozza a fájlt, felépíti a \texttt{Labyrinth}-ot, létrehozza Pac-Mant és a szellemeket a kezdőmezőjükön, és együtt adja vissza őket egy \texttt{LevelData}-ban. Így a \texttt{GameEngine} nem duzzad fel inicializáló kóddal, és a motornak sosem kell ismernie a fájlformátumot.
-    \item \textbf{Observer (megfigyelő) minta:} A megjelenítő komponensnek (\texttt{JPanel}) meg kell figyelnie a \texttt{GameEngine}-t. Amikor egy időzítő-tickben frissül a játék állapota, a motor értesíti a nézetet, hogy hívjon \texttt{repaint()}-et, így a játékciklus elválik a grafikus megjelenítéstől.
+    \item \textbf{A nézet frissítése (Observer nélkül):} A motor senkit sem értesít: nincsenek figyelői, és semmit sem tud a nézetről. A játékot a \texttt{GamePanel} Swing \texttt{Timer}-e hajtja: minden tickben meghívja az \texttt{engine.update()}-et, majd a \texttt{repaint()}-et, a \texttt{paintComponent} pedig a motor gettereiből olvassa ki az aktuális állapotot. A függőség csak egy irányba mutat, a nézettől a modell felé. Mivel a nézet úgyis minden tickben újrarajzolódik, egy értesítés a motortól semmi új információt nem hordozna, és mivel mindkét hívás az Event Dispatch Thread szálon fut, a modellt sosem olvassa senki, miközben éppen változik.
 \end{itemize}
 
 \begin{figure}[h!]
@@ -583,18 +581,14 @@ Annak érdekében, hogy a kód megfeleljen az egyetemi elvárásoknak, és jól 
                         state/.style={draw, circle, minimum size=2.5cm, align=center}]
         
         % Az állapotok kézzel elhelyezve, a legjobb kompatibilitásért
-        \node[state] (Scatter) at (0, 0) {SCATTER};
-        \node[state] (Chase) at (8.5, 0) {CHASE};
+        \node[state] (Chase) at (4.25, 0) {CHASE};
         \node[state] (Frightened) at (0, -6) {FRIGHTENED};
         \node[state] (Dead) at (8.5, -6) {DEAD};
 
         \path
-        (Scatter) edge [bend left=15] node {Lejár az időzítő} (Chase)
-        (Chase) edge [bend left=15] node {Lejár az időzítő} (Scatter)
-        (Scatter) edge [bend right=15] node [left] {Power pellet} (Frightened)
-        (Chase) edge node [above left, pos=0.3] {Power pellet} (Frightened)
+        (Chase) edge [bend right=15] node [above left] {Power pellet} (Frightened)
+        (Frightened) edge [bend right=15] node [below right] {Lejár az ijedtség} (Chase)
         (Frightened) edge node [below] {Pac-Man megeszi} (Dead)
-        (Frightened) edge [bend right=10] node [below right] {Lejár az ijedtség} (Chase)
         (Dead) edge node [right] {Hazaér} (Chase);
     \end{tikzpicture}
     } % \resizebox vége
@@ -620,10 +614,28 @@ A tesztkészletnek le kell fednie a kritikus játékmechanikákat, többek köz�
 \begin{itemize}
     \item \textbf{Falnak ütközés:} \textit{Adott:} Pac-Man egy \texttt{WALL} mező mellett áll, és felé néz. \textit{Amikor:} feldolgozódik egy mozgási parancs. \textit{Akkor:} Pac-Man $(X, Y)$ koordinátái nem változhatnak.
     \item \textbf{Pötty megevése:} \textit{Adott:} Pac-Man egy \texttt{DOT} mezőre lép. \textit{Amikor:} a motor frissíti az állapotot. \textit{Akkor:} a pontszámnak nőnie kell, a mezőnek pedig \texttt{EMPTY}-re kell változnia.
-    \item \textbf{Ijedt állapotba váltás:} \textit{Adott:} Pac-Man megeszik egy \texttt{POWERPELLET}-et. \textit{Amikor:} feldolgozódik az ütközés. \textit{Akkor:} minden szellemnek \texttt{CHASE}/\texttt{SCATTER} állapotból \texttt{FRIGHTENED} állapotba kell kerülnie.
+    \item \textbf{Ijedt állapotba váltás:} \textit{Adott:} Pac-Man megeszik egy \texttt{POWERPELLET}-et. \textit{Amikor:} feldolgozódik az ütközés. \textit{Akkor:} minden szellemnek \texttt{CHASE} állapotból \texttt{FRIGHTENED} állapotba kell kerülnie.
     \item \textbf{Halál:} \textit{Adott:} Pac-Man és egy \texttt{CHASE} állapotú szellem ugyanazon a mezőn áll (vagy egy lépés alatt helyet cserél). \textit{Amikor:} kiértékelődnek az ütközések. \textit{Akkor:} a játékos életszámlálójának eggyel csökkennie kell, a pozícióknak pedig vissza kell állniuk a saját kezdőmezőjükre.
     \item \textbf{Game Over:} \textit{Adott:} Pac-Mannek egy élete maradt. \textit{Amikor:} összeütközik egy \texttt{CHASE} állapotú szellemmel. \textit{Akkor:} az \texttt{isGameOver()}-nek igaznak kell lennie, és a további lépések egyetlen szereplőt sem mozdíthatnak el.
 \end{itemize}
+
+\subsection*{A megvalósított tesztek}
+A tesztkészlet 16 tesztből áll, 4 tesztosztályban. A tesztek a \texttt{src/test/java} mappában vannak, mindegyik a tesztelt osztállyal azonos csomagban. Minden tesztosztály egy \texttt{@BeforeEach} metódusban építi fel a közös kiinduló állapotot (fixture), így minden teszt friss állapotból indul.
+
+\vspace{0.1cm}
+\begin{tabular}{@{}p{3.6cm}p{11.2cm}@{}}
+    \toprule
+    \textbf{Tesztosztály} & \textbf{Mit ellenőriz} \\
+    \midrule
+    \texttt{GameEngineTest} (10) & falnak ütközés; pötty megevése; a blokkolt kanyar nem állítja meg az aktuális lépést; a „+” alakú mező kereszteződés; a power pellet pontot ad és megijeszti a szellemeket; egy üldöző szellemmel való találkozás egy életbe kerül, és mindenki visszaáll a kezdőmezőjére; az ijedt szellem megevése pontot ad, és az élet megmarad; a Game Over leállítja a játékot; az Ambusher 4 mezővel Pac-Man elé céloz; a \texttt{nextLevel()} növeli a szintet, és visszaállítja a megevett mezőket \\
+    \texttt{GhostTest} (2) & \texttt{respawn()}: az otthonától távol lévő \texttt{DEAD} szellem \texttt{DEAD} marad; hazaérve \texttt{CHASE} lesz, és megáll \\
+    \texttt{LabyrinthTest} (2) & \texttt{hasDotsLeft()}: igaz, amíg marad power pellet; hamis, ha minden elfogyott \\
+    \texttt{LevelManagerTest} (2) & a hiányzó pályafájl \texttt{IOException}-t, az ismeretlen pályajel \texttt{IllegalArgumentException}-t dob (mindkettő \texttt{assertThrows}-szal, egy \texttt{@TempDir} mappában lévő fájlokon) \\
+    \bottomrule
+\end{tabular}
+\vspace{0.1cm}
+
+{\sloppy Együtt háromnál több osztály metódusait tesztelik, például: \texttt{GameEngine.step()}, \texttt{checkCollisions()}, \texttt{nextLevel()}, \texttt{isGameOver()}, \texttt{Labyrinth.isIntersection()}, \texttt{hasDotsLeft()}, \texttt{Ghost.frighten()}, \texttt{eaten()}, \texttt{respawn()}, \texttt{AmbusherStrategy.target()}, \texttt{MoveCommand.execute()} és \texttt{LevelManager.loadFromCSV()}.\par}
 \clearpage
 
 % --- 8. Fájlkezelés és perzisztencia ---
@@ -701,7 +713,7 @@ Ezért az aktív játékállást \textbf{Java bináris szerializációval} menti
 A játékhoz Java 17 vagy újabb szükséges. Fordítsa le az \texttt{mvn compile} paranccsal, majd indítsa a projekt mappájából (abból a mappából, amelyben a \texttt{maps} található):
 
 \vspace{0.1cm}
-\texttt{java -cp target/classes hu.bme.pacman.game.Main}
+\texttt{java -cp target/classes hu.bme.pacman.system.Main}
 \vspace{0.1cm}
 
 Ha fejlesztőkörnyezetből (IDE) indítja, a munkakönyvtárnak ott is a projekt mappájának kell lennie. A játék minden fájlját (pályák, mentések, ranglista) ehhez képest keresi.

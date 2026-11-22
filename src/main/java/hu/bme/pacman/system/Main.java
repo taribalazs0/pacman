@@ -1,8 +1,6 @@
-package hu.bme.pacman.game;
+package hu.bme.pacman.system;
 
 import javax.swing.SwingUtilities;
-
-import hu.bme.pacman.system.MainFrame;
 
 public class Main {
     public static void main(String[] args) {

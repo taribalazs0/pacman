@@ -208,4 +208,22 @@ class GameEngineTest {
         assertEquals(new Tile(PACMAN_START_X + AmbusherStrategy.TILES_AHEAD, ROW), ahead);
         assertEquals(new Tile(PACMAN_START_X, ROW), standingStill);
     }
+
+    @Test
+    void nextLevelRaisesTheLevelAndRestoresTheEatenTiles() {
+        // Arrange: Pac-Man eats the power pellet at (2,1)
+        pacman.setDirection(Directions.RIGHT);
+        GameEngine engine = engineWith();
+        engine.step();
+        assertEquals(CellType.EMPTY, map.getCell(2, ROW)); // precondition: really eaten
+
+        // Act
+        engine.nextLevel();
+
+        // Assert
+        assertEquals(2, engine.getCurrentLevel());
+        assertEquals(CellType.POWERPELLET, map.getCell(2, ROW), "the maze is restored from the original");
+        assertEquals(PACMAN_START_X, pacman.getX(), "Pac-Man starts the new level on his start tile");
+        assertEquals(GameEngine.POWERPELLET_SCORE, engine.getScore(), "the score is kept between levels");
+    }
 }
