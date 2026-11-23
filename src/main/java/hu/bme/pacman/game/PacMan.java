@@ -15,11 +15,14 @@ public class PacMan extends GameObject {
         super(x, y, 1, Directions.IDLE);
     }
 
+    /** Makes buffered turn possible. Checked by GamePanel's keyPressed after each WASD button press. 
+     * Only stores the command, does not execute.
+    */
     public void setCurrentCommand(Command currentCommand) {
         this.currentCommand = currentCommand;
     }
 
-    /* If we have a valid incoming command, we execute the Command interface */
+    /* If we have a valid incoming command (through setCurrentCommand()), we execute the Command interface */
     public void processInput() {
         if (currentCommand != null) {
             currentCommand.execute();

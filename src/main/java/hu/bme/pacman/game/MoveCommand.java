@@ -20,6 +20,7 @@ public class MoveCommand implements Command {
         this.direction = direction;
     }
 
+    /** Makes PacMan move in the desired direction. If direction is walkable then sets the direction. */
     @Override 
     public void execute() {
         int nextX = pacman.getX();

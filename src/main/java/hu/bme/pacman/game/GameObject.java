@@ -37,13 +37,15 @@ public abstract class GameObject implements Serializable {
 
     /** Copies the current x,y values into the previous x,y values 
      *  Call once at the start of every step, even if the object does not move
+     * 
+     * Used for continous drawing on the screen.
     */
     public void rememberPosition() {
         prevX = x;
         prevY = y;
     }
     
-    /** Physically moves the character through the maze */
+    /** Physically moves the character through the maze, makes a step in the direction which it faces */
     public void move() {
         switch (direction) {
             case UP -> y -= speed;
@@ -100,6 +102,7 @@ public abstract class GameObject implements Serializable {
         return direction;
     }
 
+    /** Set the direction in which the charater is facing. Overridden by PacMan, Ghosts are not using this */
     public void setDirection(Directions direction) {
         this.direction = direction;
     }
