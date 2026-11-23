@@ -204,7 +204,7 @@ class GameEngineTest {
         pacman.setDirection(Directions.IDLE);
         Tile standingStill = strategy.target(ghost, pacman, map);
 
-        // Assert: Tile is a record, so assertEquals compares x and y
+        // Assert: Tile overrides equals, so assertEquals compares x and y
         assertEquals(new Tile(PACMAN_START_X + AmbusherStrategy.TILES_AHEAD, ROW), ahead);
         assertEquals(new Tile(PACMAN_START_X, ROW), standingStill);
     }

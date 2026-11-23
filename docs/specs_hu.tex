@@ -131,7 +131,7 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
         \item A panel nem ismeri a \texttt{MainFrame}-et: a keret \texttt{Runnable} visszahívásként (\texttt{onQuit}) adja át neki a „vissza a menübe” műveletet, a panel pedig csak jelzi, hogy a játékos kilépett.
     \end{itemize}
     \item \textbf{LeaderboardPanel (JPanel):} A \texttt{highscores.csv} csak olvasható nézete: helyezés, játékosnév, pontszám és dátum, játékonként egy sor, a legjobb elöl, fix szélességű betűtípussal, hogy az oszlopok egymás alá kerüljenek, és egy \textit{Back to menu} gombbal. A fájlt sosem írja. A \texttt{refresh()} minden megjelenítéskor újraolvassa a fájlt; a ranglista csak két játék között változik, ezért nincs szükség időzítőre. Ha még nincs fájl, a „No scores yet” szöveget mutatja.
-    \item \textbf{HighscoreEntry (record):} A ranglista egy sora (\texttt{playerName}, \texttt{score}, valamint \texttt{date} \texttt{LocalDate}-ként). Csak adatot szállít a \texttt{LevelManager} és a \texttt{LeaderboardPanel} között, ezért a felhasználói felület és az I/O csomagjába tartozik, nem a játékmodellbe.
+    \item \textbf{HighscoreEntry:} A ranglista egy sora (\texttt{playerName}, \texttt{score}, valamint \texttt{date} \texttt{LocalDate}-ként). Csak adatot szállít a \texttt{LevelManager} és a \texttt{LeaderboardPanel} között, ezért a felhasználói felület és az I/O csomagjába tartozik, nem a játékmodellbe.
     \item \textbf{MapEditor (JPanel):} Az egyéni pályák rajzolására szolgáló képernyő: középen egy kattintható rács, jobbra az eszköztár, felül a \textit{BACK} és a \textit{SAVE MAP} gomb.
     \begin{itemize}
         \item \textbf{Rögzített méret és szellemház:} a rács mindig $19 \times 21$ mezős (\texttt{MAP\_WIDTH}, \texttt{MAP\_HEIGHT}), akkora, mint a \texttt{level1.txt}, és üresen (feketén) indul. A szellemház a \texttt{level1.txt}-ből van átmásolva, és egy kis sablonként tárolódik, a pályafájl jeleivel (\texttt{GHOST\_HOUSE}): a 7--11. oszlop és a 8--10. sor (0-tól számozva) $5 \times 3$-as blokkja, benne az \texttt{AMBUSHER}, a \texttt{WANDERER} és a \texttt{CHAOTIC} szellemmel, valamint a \texttt{TRACKER} mezője a felső nyílás fölött. Ezek a mezők zárolva vannak (\texttt{isLocked}), sötétszürke padlón jelennek meg, és a négy szellem mindig itt kezd; a felhasználó nem helyezhet el szellemet. Ez eltér az eredeti tervtől, amelyben a szellemek kezdőmezője is elhelyezhető volt.
@@ -207,13 +207,15 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
         };
 
         \node[umlclass] (HighscoreEntry) at (-5.5, 0.3) {
-            \guillemotleft record\guillemotright \\
             \textbf{HighscoreEntry}
             \nodepart{two}
-            playerName: String \\
-            score: int \\
-            date: LocalDate
+            - playerName: String \\
+            - score: int \\
+            - date: LocalDate
             \nodepart{three}
+            + getPlayerName(): String \\
+            + getScore(): int \\
+            + getDate(): LocalDate
         };
 
         \node[umlclass] (MapEditor) at (5.5, 8.2) {
@@ -373,12 +375,13 @@ A program grafikus felülete a Java Swing keretrendszerre épül, a játékálla
         };
 
         \node[umlclass] (Tile) at (-3, -23.4) {
-            \guillemotleft record, Serializable\guillemotright \\
+            \guillemotleft Serializable\guillemotright \\
             \textbf{Tile}
             \nodepart{two}
-            x, y: int
+            - x, y: int \textit{(final)}
             \nodepart{three}
-            + x(), y(): int
+            + getX(), getY(): int \\
+            + equals(o), hashCode(): \ldots
         };
 
         \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.8cm, fill=yellow!10] (StrategyNote) at (10.2, -23.4) {
@@ -532,7 +535,7 @@ Mozgás előtt minden szereplő elmenti az előző mezőjét a \texttt{rememberP
 Annak érdekében, hogy a kód megfeleljen az egyetemi elvárásoknak, és jól mutassa az objektumorientált elveket, a megvalósításnak kifejezetten a következő tervezési mintákat kell alkalmaznia:
 
 \begin{itemize}
-    \item \textbf{A szellemek mozgása (Strategy minta):} Minden személyiség célmező-számítása külön osztályban van (\texttt{TrackerStrategy}, \texttt{AmbusherStrategy}, \texttt{WandererStrategy}, \texttt{ChaoticStrategy}), és mindegyik ugyanazt a \texttt{GhostStrategy} interfészt valósítja meg, amelynek egyetlen metódusa van: \texttt{Tile target(Ghost self, PacMan pacman, Labyrinth map)}. A célmező \texttt{Tile}-ként tér vissza, ami egy kis, módosíthatatlan (immutable) \texttt{record} \texttt{x} és \texttt{y} adattaggal, mert egy metódus csak egy értéket adhat vissza (a \texttt{java.awt.Point} nem jöhet szóba, mert a modell nem függhet az AWT-től). A stratégia csak azt mondja meg, \textit{hová} menjen a szellem; azt, hogy \textit{hogyan} kerüljön közelebb, a \texttt{chooseDirectionTowards} dönti el. Azt, hogy egy szellem melyik stratégiát kapja, a \texttt{GhostPersonality} enum határozza meg (a konstruktorban a \texttt{Ghost.strategyFor()}), a \texttt{Ghost} pedig adattagként tárolja (öröklés helyett kompozíció).
+    \item \textbf{A szellemek mozgása (Strategy minta):} Minden személyiség célmező-számítása külön osztályban van (\texttt{TrackerStrategy}, \texttt{AmbusherStrategy}, \texttt{WandererStrategy}, \texttt{ChaoticStrategy}), és mindegyik ugyanazt a \texttt{GhostStrategy} interfészt valósítja meg, amelynek egyetlen metódusa van: \texttt{Tile target(Ghost self, PacMan pacman, Labyrinth map)}. A célmező \texttt{Tile}-ként tér vissza, ami egy kis, módosíthatatlan (immutable) osztály két \texttt{final} adattaggal (\texttt{x}, \texttt{y}), érték szerinti \texttt{equals()}-szal és \texttt{hashCode()}-dal, mert egy metódus csak egy értéket adhat vissza (a \texttt{java.awt.Point} nem jöhet szóba, mert a modell nem függhet az AWT-től). A stratégia csak azt mondja meg, \textit{hová} menjen a szellem; azt, hogy \textit{hogyan} kerüljön közelebb, a \texttt{chooseDirectionTowards} dönti el. Azt, hogy egy szellem melyik stratégiát kapja, a \texttt{GhostPersonality} enum határozza meg (a konstruktorban a \texttt{Ghost.strategyFor()}), a \texttt{Ghost} pedig adattagként tárolja (öröklés helyett kompozíció).
 
     \textbf{A személyiségek célmezői:}
     \begin{itemize}

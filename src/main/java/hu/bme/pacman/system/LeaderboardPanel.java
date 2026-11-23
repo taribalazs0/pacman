@@ -64,7 +64,7 @@ public class LeaderboardPanel extends JPanel {
         int rank = 1;
         for (HighscoreEntry entry : entries) {
             text.append(String.format("%2d. %-15s %6d   %s%n",
-                    rank, entry.playerName(), entry.score(), entry.date()));
+                    rank, entry.getPlayerName(), entry.getScore(), entry.getDate()));
             rank++;
         }
         listArea.setText(text.toString());

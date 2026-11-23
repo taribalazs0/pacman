@@ -51,7 +51,7 @@ public class Ghost extends GameObject {
             return;
         }
         Tile target = strategy.target(this, pacman, map);
-        chooseDirectionTowards(map, target.x(), target.y());
+        chooseDirectionTowards(map, target.getX(), target.getY());
     }
 
     /** This decides about the possible tiles a ghost can move to

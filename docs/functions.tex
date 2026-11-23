@@ -1,0 +1,302 @@
+\documentclass[10pt, a4paper]{article}
+
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{babel}
+\babelprovide[import, main]{hungarian}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage[colorlinks=true, linkcolor=black]{hyperref}
+\setlength{\emergencystretch}{3em}
+\setlength{\parindent}{0pt}
+
+% Egy metódus: szignatúra, kit hív, ki hívja
+\newcommand{\fn}[3]{%
+  \item \texttt{#1}\par
+  {\small\textit{Hív:} #2\par\textit{Hívja:} #3}\vspace{3pt}}
+\newcommand{\none}{--}
+
+\makeatletter
+\renewcommand{\@seccntformat}[1]{\csname the#1\endcsname.\quad}
+\makeatother
+
+\title{Pac-Man -- az összes metódus, alulról felfelé\\\large Gyakorlólap a bemutatóhoz}
+\author{Tari Balázs}
+\date{}
+
+\begin{document}
+\maketitle
+\raggedright
+
+\section*{Hogyan használd}
+A metódusok \textbf{függőségi sorrendben} szerepelnek. Minden szint csak a korábbi szintekre támaszkodik, így az elejétől haladva mindig olyasmit mondasz el, aminek az építőkövei már elhangzottak. Minden metódusnál két lista van:
+\begin{itemize}[nosep]
+  \item \textbf{Hív:} kiket hív meg ő maga (lefelé mutató élek a gráfban);
+  \item \textbf{Hívja:} ki hívja meg őt (felfelé mutató élek).
+\end{itemize}
+A feladatod mindegyiknél: \textit{mit csinál, miért így, milyen peremfeltételt kezel.} A szignatúrák a kódból valók; a getterek csoportosítva szerepelnek.
+
+\medskip
+\textbf{A szintek (a gráf rétegei):}
+\begin{enumerate}[nosep, start=0]
+  \item Enumok, adathordozó osztályok (\texttt{Tile}, \texttt{HighscoreEntry}), a \texttt{Command} interfész -- senkire sem támaszkodnak
+  \item \texttt{Labyrinth} -- csak \texttt{CellType}
+  \item \texttt{GameObject} -- csak \texttt{Directions}
+  \item \texttt{PacMan}, \texttt{MoveCommand} -- \texttt{GameObject}, \texttt{Labyrinth}, \texttt{Command}
+  \item A szellemstratégiák -- \texttt{Ghost}/\texttt{PacMan} getterei, \texttt{Tile}
+  \item \texttt{Ghost} -- \texttt{GameObject}, \texttt{Labyrinth}, stratégiák
+  \item \texttt{LevelData} -- adattároló
+  \item \texttt{GameEngine} -- mindegyik fenti
+  \item \texttt{LevelManager} -- fájl $\leftrightarrow$ \texttt{LevelData}, ranglista
+  \item Felhasználói felület: \texttt{LeaderboardPanel}, \texttt{GamePanel}, \texttt{MapEditor}, \texttt{MainMenu}, \texttt{MainFrame}, \texttt{Main}
+\end{enumerate}
+
+% ==========================================================
+\section{0. szint: enumok, adathordozó osztályok, interfész}
+
+\subsection*{\texttt{CellType}, \texttt{GhostPersonality}, \texttt{GhostState} (enum)}
+Nincs saját metódusuk. Értékek: \texttt{WALL, DOT, POWERPELLET, EMPTY}; \texttt{TRACKER, AMBUSHER, WANDERER, CHAOTIC}; \texttt{CHASE, FRIGHTENED, DEAD}.
+
+\subsection*{\texttt{Directions} (enum: \texttt{UP, DOWN, LEFT, RIGHT, IDLE})}
+\begin{itemize}
+\fn{public Directions opposite()}{\none}{\texttt{Ghost.possibleDirections}, \texttt{Ghost.frighten}}
+\fn{public int dx()}{\none}{\texttt{AmbusherStrategy.target}}
+\fn{public int dy()}{\none}{\texttt{AmbusherStrategy.target}}
+\end{itemize}
+
+\subsection*{\texttt{Tile} (módosíthatatlan osztály)}
+\begin{itemize}
+\fn{public Tile(int x, int y)}{\none}{a négy stratégia, \texttt{MapEditor.editTile}}
+\fn{public int getX(),\ public int getY()}{\none}{\texttt{Ghost.chooseChaseDirection}, \texttt{MapEditor.toLevelData}, \texttt{MapEditor.drawMap}}
+\fn{@Override public boolean equals(Object other)}{\texttt{instanceof}}{\texttt{MapEditor.editTile}, tesztek (\texttt{assertEquals})}
+\fn{@Override public int hashCode()}{\none}{\texttt{HashMap}/\texttt{HashSet} (a projekt nem használja, de \texttt{equals} mellé kötelező)}
+\fn{@Override public String toString()}{\none}{hibaüzenetek, tesztkimenet}
+\end{itemize}
+
+\subsection*{\texttt{HighscoreEntry} (módosíthatatlan osztály)}
+\begin{itemize}
+\fn{public HighscoreEntry(String playerName, int score, LocalDate date)}{\none}{\texttt{LevelManager.loadHighscores}, \texttt{GamePanel.saveHighscore}}
+\fn{getPlayerName(), getScore(), getDate()}{\none}{\texttt{LevelManager.loadHighscores} (\texttt{HighscoreEntry::getScore} a rendezéshez), \texttt{appendHighscore}, \texttt{LeaderboardPanel.refresh}}
+\fn{@Override public String toString()}{\none}{hibakeresés (\texttt{PlayerName;Score;Date} alakban)}
+\end{itemize}
+
+\subsection*{\texttt{Command} (interfész)}
+\begin{itemize}
+\fn{void execute()}{\none\ (absztrakt; megvalósítja: \texttt{MoveCommand})}{\texttt{PacMan.processInput}}
+\end{itemize}
+
+% ==========================================================
+\section{1. szint: \texttt{Labyrinth}}
+\begin{itemize}
+\fn{public Labyrinth(CellType[][] grid)}{\none}{\texttt{LevelManager.loadFromCSV}, \texttt{MapEditor.toLevelData}, \texttt{copy()}, tesztek}
+\fn{public int getWidth(),\ public int getHeight()}{\none}{\texttt{copy}, \texttt{GameEngine.nextLevel}, \texttt{LevelManager.saveToCSV}, \texttt{placeActor}, \texttt{GamePanel}}
+\fn{public CellType getCell(int x, int y)}{\none}{\texttt{isWalkable}, \texttt{GameEngine.checkCollisions}, \texttt{nextLevel}, \texttt{LevelManager.saveToCSV}, \texttt{placeActor}, \texttt{GamePanel.paintComponent}}
+\fn{public void setCell(int x, int y, CellType type)}{\none}{\texttt{GameEngine.checkCollisions}, \texttt{nextLevel}, tesztek}
+\fn{public boolean isWalkable(int x, int y)}{\texttt{getCell}}{\texttt{isIntersection}, \texttt{MoveCommand.execute}, \texttt{Ghost.canStep}, \texttt{GameEngine.stepIfOpen}}
+\fn{public boolean isIntersection(int x, int y)}{\texttt{isWalkable}}{tesztek (a szellemek nem hívják: náluk a \texttt{possibleDirections} listájának hossza dönt)}
+\fn{public boolean hasDotsLeft()}{\none}{\texttt{GameEngine.step}}
+\fn{public Labyrinth copy()}{\texttt{Arrays.copyOf}, \texttt{Labyrinth(grid)}}{\texttt{GameEngine} konstruktora}
+\end{itemize}
+
+% ==========================================================
+\section{2. szint: \texttt{GameObject} (absztrakt)}
+\begin{itemize}
+\fn{protected GameObject(int x, int y, int speed, Directions direction)}{\none}{\texttt{PacMan}, \texttt{Ghost} konstruktora (\texttt{super(...)})}
+\fn{public void rememberPosition()}{\none}{\texttt{GameEngine.stepIfOpen}, \texttt{GameEngine.step} (kihagyott ijedt lépés)}
+\fn{public void move()}{\none}{\texttt{GameEngine.stepIfOpen}, tesztek}
+\fn{public void resetToStart()}{\none}{felüldefiniálja: \texttt{PacMan}, \texttt{Ghost}; hívja: \texttt{GameEngine.loseLife}, \texttt{nextLevel}}
+\fn{getX(), getY(), getSpeed(), getPrevX(), getPrevY(), getStartX(), getStartY(), getDirection()}{\none}{szinte mindenki (motor, stratégiák, nézet, \texttt{MoveCommand})}
+\fn{public void setDirection(Directions direction)}{\none}{\texttt{MoveCommand.execute}, tesztek}
+\end{itemize}
+
+% ==========================================================
+\section{3. szint: \texttt{PacMan} és \texttt{MoveCommand}}
+\subsection*{\texttt{PacMan extends GameObject}}
+\begin{itemize}
+\fn{public PacMan(int x, int y)}{\texttt{super(x, y, 1, IDLE)}}{\texttt{LevelManager.loadFromCSV}, \texttt{MapEditor.toLevelData}, tesztek}
+\fn{public void setCurrentCommand(Command currentCommand)}{\none}{\texttt{GamePanel} \texttt{keyPressed}, tesztek}
+\fn{public void processInput()}{\texttt{currentCommand.execute()}}{\texttt{GameEngine.step}}
+\fn{@Override public void resetToStart()}{\texttt{super.resetToStart()}}{\texttt{GameEngine.loseLife}, \texttt{nextLevel}}
+\end{itemize}
+
+\subsection*{\texttt{MoveCommand implements Command}}
+\begin{itemize}
+\fn{public MoveCommand(PacMan pacman, Labyrinth map, Directions direction)}{\none}{\texttt{GamePanel} \texttt{keyPressed}, tesztek}
+\fn{@Override public void execute()}{\texttt{pacman.getX/getY/getSpeed}, \texttt{map.isWalkable}, \texttt{pacman.setDirection}}{\texttt{PacMan.processInput}}
+\end{itemize}
+
+% ==========================================================
+\section{4. szint: a szellemstratégiák (Strategy minta)}
+\begin{itemize}
+\fn{GhostStrategy: Tile target(Ghost self, PacMan pacman, Labyrinth map)}{\none\ (interfész, \texttt{extends Serializable})}{\texttt{Ghost.chooseChaseDirection}, \texttt{ChaoticStrategy.target}}
+\fn{TrackerStrategy: public Tile target(...)}{\texttt{pacman.getX/getY}, \texttt{new Tile}}{\texttt{Ghost.chooseChaseDirection}, \texttt{ChaoticStrategy}}
+\fn{AmbusherStrategy: public Tile target(...)}{\texttt{pacman.getX/getY/getDirection}, \texttt{Directions.dx/dy}, \texttt{TILES\_AHEAD}}{\texttt{Ghost.chooseChaseDirection}, \texttt{ChaoticStrategy}, tesztek}
+\fn{WandererStrategy: public Tile target(...)}{\texttt{self.getX/getY/getStartX/getStartY}, \texttt{pacman.getX/getY}, \texttt{FLEE\_DISTANCE}}{\texttt{Ghost.chooseChaseDirection}, \texttt{ChaoticStrategy}}
+\end{itemize}
+
+\subsection*{\texttt{ChaoticStrategy implements GhostStrategy}}
+\begin{itemize}
+\fn{public ChaoticStrategy()}{\texttt{this(new Random())}}{\texttt{Ghost.strategyFor}}
+\fn{public ChaoticStrategy(Random random)}{\texttt{new TrackerStrategy/AmbusherStrategy/WandererStrategy}, \texttt{pickRandomStrategy}}{a fenti konstruktor, tesztek}
+\fn{private GhostStrategy pickRandomStrategy()}{\texttt{random.nextInt}}{konstruktor, \texttt{target}}
+\fn{@Override public Tile target(Ghost self, PacMan pacman, Labyrinth map)}{\texttt{pickRandomStrategy}, \texttt{current.target}}{\texttt{Ghost.chooseChaseDirection}}
+\fn{GhostStrategy getCurrent()\ \ (csomagszintű)}{\none}{tesztek}
+\end{itemize}
+
+% ==========================================================
+\section{5. szint: \texttt{Ghost extends GameObject}}
+\begin{itemize}
+\fn{public Ghost(int x, int y, GhostPersonality personality)}{\texttt{super(x, y, 1, IDLE)}, \texttt{strategyFor}}{\texttt{LevelManager.loadFromCSV}, \texttt{MapEditor.placeGhostHouse}, tesztek}
+\fn{private static GhostStrategy strategyFor(GhostPersonality personality)}{a stratégiák konstruktorai}{konstruktor}
+\fn{private int nextX(Directions d),\ private int nextY(Directions d)}{\none}{\texttt{canStep}, \texttt{chooseDirectionTowards}}
+\fn{private boolean canStep(Labyrinth map, Directions d)}{\texttt{nextX}, \texttt{nextY}, \texttt{map.isWalkable}}{\texttt{possibleDirections}}
+\fn{public List<Directions> possibleDirections(Labyrinth map)}{\texttt{direction.opposite()}, \texttt{canStep}}{\texttt{chooseDirection}, \texttt{chooseDirectionTowards}}
+\fn{public void chooseDirection(Labyrinth map, Random random)}{\texttt{possibleDirections}, \texttt{random.nextInt}}{\texttt{GameEngine.step} (\texttt{FRIGHTENED}), \texttt{chooseChaseDirection} (tartalék)}
+\fn{public void chooseDirectionTowards(Labyrinth map, int targetX, int targetY)}{\texttt{possibleDirections}, \texttt{nextX}, \texttt{nextY}}{\texttt{GameEngine.step} (\texttt{DEAD}), \texttt{chooseChaseDirection}}
+\fn{public void chooseChaseDirection(Labyrinth map, PacMan pacman, Random random)}{\texttt{strategy.target}, \texttt{chooseDirectionTowards} (vagy \texttt{chooseDirection})}{\texttt{GameEngine.step} (\texttt{CHASE})}
+\fn{public void frighten()}{\texttt{direction.opposite()}}{\texttt{GameEngine.checkCollisions}, tesztek}
+\fn{public void calmDown()}{\none}{\texttt{GameEngine.step}}
+\fn{public void eaten()}{\none}{\texttt{GameEngine.eatGhost}, tesztek}
+\fn{public void respawn()}{\texttt{getX/getY/getStartX/getStartY}}{\texttt{GameEngine.step}, tesztek}
+\fn{@Override public void resetToStart()}{\texttt{super.resetToStart()}}{\texttt{GameEngine.loseLife}, \texttt{nextLevel}}
+\fn{getState(), getPersonality(), getTargetX(), getTargetY()}{\none}{motor, \texttt{GamePanel}, \texttt{LevelManager.saveToCSV}, tesztek}
+\end{itemize}
+
+% ==========================================================
+\section{6. szint: \texttt{LevelData}}
+\begin{itemize}
+\fn{public LevelData(Labyrinth map, PacMan pacman, List<Ghost> ghosts)}{\none}{\texttt{LevelManager.loadFromCSV}, \texttt{MapEditor.toLevelData}, tesztek}
+\fn{getMap(), getPacman(), getGhosts()}{\none}{\texttt{GameEngine} konstruktora, \texttt{LevelManager.saveToCSV}}
+\end{itemize}
+
+% ==========================================================
+\section{7. szint: \texttt{GameEngine}}
+\subsection*{Létrehozás}
+\begin{itemize}
+\fn{public GameEngine(LevelData level)}{\texttt{this(level, new Random())}}{\texttt{MainMenu.startNewGame}, tesztek}
+\fn{public GameEngine(LevelData level, Random random)}{\texttt{level.getMap/getPacman/getGhosts}, \texttt{map.copy()}}{a fenti konstruktor, tesztek}
+\end{itemize}
+\subsection*{Segédmetódusok (privát)}
+\begin{itemize}
+\fn{private static boolean sameTile(int x1, int y1, int x2, int y2)}{\none}{\texttt{collidesWith}}
+\fn{private int nextColumn(GameObject entity),\ private int nextRow(GameObject entity)}{\texttt{entity.getX/getY/getSpeed/getDirection}}{\texttt{stepIfOpen}}
+\fn{private void stepIfOpen(GameObject entity)}{\texttt{rememberPosition}, \texttt{nextColumn}, \texttt{nextRow}, \texttt{map.isWalkable}, \texttt{entity.move}}{\texttt{step}}
+\fn{private boolean collidesWith(Ghost ghost)}{\texttt{sameTile}, \texttt{getX/getY/getPrevX/getPrevY}}{\texttt{checkCollisions}}
+\fn{private int frightenedDurationSteps()}{\none}{\texttt{checkCollisions}}
+\fn{private void eatGhost(Ghost ghost)}{\texttt{ghost.eaten}}{\texttt{checkCollisions}}
+\fn{private void loseLife()}{\texttt{pacman.resetToStart}, \texttt{ghost.resetToStart}}{\texttt{checkCollisions}}
+\end{itemize}
+\subsection*{A játékszabályok}
+\begin{itemize}
+\fn{public void checkCollisions()}{\texttt{map.getCell/setCell}, \texttt{ghost.frighten}, \texttt{frightenedDurationSteps}, \texttt{collidesWith}, \texttt{eatGhost}, \texttt{loseLife}}{\texttt{step}}
+\fn{public void nextLevel()}{\texttt{originalMap.getCell}, \texttt{map.setCell}, \texttt{resetToStart}}{\texttt{step}, tesztek}
+\fn{public boolean isGameOver()}{\none}{\texttt{step}, \texttt{GamePanel} (\texttt{Timer}, \texttt{paintComponent}, \texttt{saveAndQuit}), tesztek}
+\fn{public void step()}{\texttt{isGameOver}, \texttt{calmDown}, \texttt{processInput}, \texttt{stepIfOpen}, \texttt{rememberPosition}, \texttt{chooseDirectionTowards}/\texttt{chooseDirection}/\texttt{chooseChaseDirection}, \texttt{respawn}, \texttt{checkCollisions}, \texttt{hasDotsLeft}, \texttt{nextLevel}}{\texttt{update}, tesztek}
+\fn{public void update()}{\texttt{step}}{\texttt{GamePanel} \texttt{Timer}-e}
+\fn{public double getStepProgress()}{\none}{\texttt{GamePanel.paintComponent}}
+\end{itemize}
+\subsection*{Mentés, betöltés, getterek}
+\begin{itemize}
+\fn{public void saveGameState(String file) throws IOException}{\texttt{ObjectOutputStream.writeObject(this)}}{\texttt{GamePanel.saveAndQuit}}
+\fn{public static GameEngine loadGameState(String file) throws IOException, ClassNotFoundException}{\texttt{ObjectInputStream.readObject}, \texttt{instanceof}}{\texttt{MainMenu.loadGame}}
+\fn{getScore(), getLives(), getCurrentLevel(), getMap(), getPacman(), getGhosts()}{\none}{\texttt{GamePanel}, tesztek}
+\end{itemize}
+
+% ==========================================================
+\section{8. szint: \texttt{LevelManager} (állapot nélküli, csak statikus)}
+\begin{itemize}
+\fn{private LevelManager()}{\none}{senki (a példányosítás tiltása)}
+\fn{private static char symbolOf(CellType cell)}{\none}{\texttt{saveToCSV}}
+\fn{private static char symbolOf(GhostPersonality personality)}{\none}{\texttt{saveToCSV}}
+\fn{static GhostPersonality personalityOf(char symbol)}{\none}{\texttt{loadFromCSV}, \texttt{MapEditor.placeGhostHouse}}
+\fn{private static void placeActor(char[][] picture, Labyrinth map, int x, int y, char symbol)}{\texttt{map.getWidth/getHeight/getCell}}{\texttt{saveToCSV}}
+\fn{public static LevelData loadFromCSV(String file) throws IOException}{\texttt{Files.newBufferedReader}, \texttt{personalityOf}, \texttt{new PacMan/Ghost/Labyrinth/LevelData}}{\texttt{MainMenu.startNewGame}, tesztek}
+\fn{public static void saveToCSV(String file, LevelData level) throws IOException}{\texttt{symbolOf}, \texttt{placeActor}, \texttt{Files.newBufferedWriter}}{\texttt{MapEditor.saveMap}}
+\fn{public static List<HighscoreEntry> loadHighscores(String file) throws IOException}{\texttt{String.split}, \texttt{Integer.parseInt}, \texttt{LocalDate.parse}, \texttt{List.sort}}{\texttt{appendHighscore}, \texttt{LeaderboardPanel.refresh}}
+\fn{public static void appendHighscore(String file, HighscoreEntry newEntry) throws IOException}{\texttt{loadHighscores}, \texttt{List.sort}, \texttt{Files.newBufferedWriter}}{\texttt{GamePanel.saveHighscore}}
+\end{itemize}
+
+% ==========================================================
+\section{9. szint: felhasználói felület}
+
+\subsection*{\texttt{LeaderboardPanel extends JPanel}}
+\begin{itemize}
+\fn{public LeaderboardPanel(MainFrame frame)}{\texttt{frame.switchScreen} (a \textit{Back} gomb lambdájában)}{\texttt{MainFrame} (adattag)}
+\fn{public void refresh()}{\texttt{LevelManager.loadHighscores}, \texttt{String.format}}{\texttt{MainFrame.switchScreen}}
+\end{itemize}
+
+\subsection*{\texttt{GamePanel extends JPanel}}
+\begin{itemize}
+\fn{public GamePanel(GameEngine engine, Runnable onQuit)}{\texttt{engine.getMap}, \texttt{saveAndQuit}; \texttt{KeyAdapter.keyPressed} $\to$ \texttt{new MoveCommand}, \texttt{setCurrentCommand}; \texttt{Timer} $\to$ \texttt{engine.update}, \texttt{isGameOver}, \texttt{saveHighscore}, \texttt{repaint}}{\texttt{MainFrame.startGame}}
+\fn{private static int interpolate(int previous, int current, double progress)}{\texttt{Math.round}}{\texttt{paintComponent}}
+\fn{static Color colorOf(GhostPersonality personality)}{\none}{\texttt{drawGhost}, \texttt{MapEditor.drawGhost}}
+\fn{private void drawTile(Graphics g, int column, int row, CellType cell)}{\texttt{g.fillRect}, \texttt{g.fillOval}}{\texttt{paintComponent}}
+\fn{private void drawPacman(Graphics g, int mazeX, int mazeY, Directions direction)}{\texttt{g.fillArc}}{\texttt{paintComponent}}
+\fn{private void drawGhost(Graphics g, int mazeX, int mazeY, GhostState state, GhostPersonality personality)}{\texttt{colorOf}, \texttt{g.fillOval}}{\texttt{paintComponent}}
+\fn{@Override protected void paintComponent(Graphics g)}{\texttt{getStepProgress}, a motor getterei, \texttt{drawTile}, \texttt{interpolate}, \texttt{drawGhost}, \texttt{drawPacman}}{a Swing (\texttt{repaint()} után)}
+\fn{private void saveHighscore()}{\texttt{System.getProperty("user.name")}, \texttt{LocalDate.now}, \texttt{LevelManager.appendHighscore}}{a \texttt{Timer} lambdája}
+\fn{static JFileChooser createSaveChooser()}{\texttt{File.mkdirs}}{\texttt{chooseSaveFile}, \texttt{MainMenu.loadGame}}
+\fn{private File chooseSaveFile()}{\texttt{createSaveChooser}, \texttt{JOptionPane.showConfirmDialog}}{\texttt{saveAndQuit}}
+\fn{private void resume()}{\texttt{timer.start}, \texttt{requestFocusInWindow}}{\texttt{saveAndQuit}}
+\fn{public void stop()}{\texttt{timer.stop}}{\texttt{MainFrame.removeCurrentGame}}
+\fn{private void saveAndQuit()}{\texttt{timer.stop}, \texttt{isGameOver}, \texttt{chooseSaveFile}, \texttt{engine.saveGameState}, \texttt{resume}, \texttt{onQuit.run}}{a \textit{SAVE \& QUIT} gomb, az F5 billentyű}
+\fn{@Override public void addNotify()}{\texttt{super.addNotify}, \texttt{requestFocusInWindow}}{a Swing (amikor a panel bekerül az ablakba)}
+\end{itemize}
+
+\subsection*{\texttt{MapEditor extends JPanel}}
+\begin{itemize}
+\fn{public MapEditor(Runnable onBack)}{\texttt{Arrays.fill}, \texttt{placeGhostHouse}, \texttt{createTopBar}, \texttt{new GridView}, \texttt{createPalette}}{\texttt{MainFrame.openEditor}}
+\fn{private void placeGhostHouse()}{\texttt{LevelManager.personalityOf}, \texttt{new Ghost}}{konstruktor}
+\fn{private static boolean isLocked(int x, int y)}{\none}{\texttt{editTile}, \texttt{drawMap}}
+\fn{private void editTile(int x, int y, boolean erase)}{\texttt{isLocked}, \texttt{Tile.equals}, \texttt{repaint}}{\texttt{GridView.handle}}
+\fn{private boolean hasDot()}{\none}{\texttt{findProblem}}
+\fn{private String findProblem()}{\texttt{hasDot}}{\texttt{saveMap}}
+\fn{private LevelData toLevelData()}{\texttt{new PacMan}, \texttt{new Labyrinth}, \texttt{new LevelData}}{\texttt{saveMap}}
+\fn{static JFileChooser createMapChooser()}{\texttt{File.mkdirs}}{\texttt{chooseMapFile}, \texttt{MainMenu.startNewGame}}
+\fn{private static boolean isDefaultMap(File file)}{\texttt{Path.normalize}}{\texttt{chooseMapFile}}
+\fn{private File chooseMapFile()}{\texttt{createMapChooser}, \texttt{isDefaultMap}, \texttt{JOptionPane}}{\texttt{saveMap}}
+\fn{private void saveMap()}{\texttt{findProblem}, \texttt{chooseMapFile}, \texttt{toLevelData}, \texttt{LevelManager.saveToCSV}}{a \textit{SAVE MAP} gomb}
+\fn{private void back()}{\texttt{JOptionPane.showConfirmDialog}, \texttt{onBack.run}}{a \textit{BACK} gomb}
+\fn{private JPanel createTopBar(),\ private JPanel createPalette()}{\texttt{saveMap}, \texttt{back} (gombok lambdái), \texttt{iconOf}, \texttt{ButtonGroup}}{konstruktor}
+\fn{private static Icon iconOf(Tool option)}{névtelen \texttt{Icon} osztály \texttt{paintIcon}-ja: \texttt{drawCell}, \texttt{drawPacman}}{\texttt{createPalette}}
+\fn{private static void fillCentredCircle(Graphics g, Color color, int x, int y, int size, int diameter)}{\texttt{g.fillOval}}{\texttt{drawCell}}
+\fn{private static void drawCell(Graphics g, CellType cell, int x, int y, int size)}{\texttt{g.fillRect}, \texttt{fillCentredCircle}}{\texttt{drawMap}, \texttt{iconOf}}
+\fn{private static void drawPacman(Graphics g, int x, int y, int size)}{\texttt{g.fillArc}}{\texttt{drawMap}, \texttt{iconOf}}
+\fn{private static void drawGhost(Graphics g, GhostPersonality personality, int x, int y, int size)}{\texttt{GamePanel.colorOf}, \texttt{g.fillOval}}{\texttt{drawMap}}
+\fn{private void drawMap(Graphics g)}{\texttt{drawCell}, \texttt{isLocked}, \texttt{drawPacman}, \texttt{drawGhost}}{\texttt{GridView.paintComponent}}
+\fn{GridView() \ \ (belső osztály)}{\texttt{addMouseListener}, \texttt{addMouseMotionListener} (\texttt{mousePressed}, \texttt{mouseDragged} $\to$ \texttt{handle})}{\texttt{MapEditor} konstruktora}
+\fn{GridView: private void handle(MouseEvent event)}{\texttt{SwingUtilities.isLeftMouseButton/isRightMouseButton}, \texttt{editTile}}{\texttt{mousePressed}, \texttt{mouseDragged}}
+\fn{GridView: @Override protected void paintComponent(Graphics g)}{\texttt{drawMap}}{a Swing}
+\end{itemize}
+
+\subsection*{\texttt{MainMenu extends JPanel}}
+\begin{itemize}
+\fn{public MainMenu(MainFrame frame)}{\texttt{addCentered}; gombok lambdái: \texttt{startNewGame}, \texttt{loadGame}, \texttt{frame.switchScreen}, \texttt{frame.openEditor}}{\texttt{MainFrame} konstruktora}
+\fn{private void addCentered(JButton button)}{\none}{konstruktor}
+\fn{private void startNewGame(MainFrame frame)}{\texttt{MapEditor.createMapChooser}, \texttt{LevelManager.loadFromCSV}, \texttt{new GameEngine}, \texttt{frame.startGame}}{\textit{Start new game} gomb}
+\fn{private void loadGame(MainFrame frame)}{\texttt{GamePanel.createSaveChooser}, \texttt{GameEngine.loadGameState}, \texttt{frame.startGame}}{\textit{Load previous game} gomb}
+\end{itemize}
+
+\subsection*{\texttt{MainFrame extends JFrame}}
+\begin{itemize}
+\fn{public MainFrame()}{\texttt{new MainMenu}, \texttt{new LeaderboardPanel}, \texttt{switchScreen}, \texttt{pack}}{\texttt{Main.main}}
+\fn{public void switchScreen(String screenName)}{\texttt{leaderboardPanel.refresh}, \texttt{cardLayout.show}}{szinte minden képernyőváltás}
+\fn{private void removeCurrentGame()}{\texttt{currentGame.stop}, \texttt{cardPanel.remove}}{\texttt{showGame}, \texttt{quitGame}}
+\fn{private void showGame(GamePanel gamePanel)}{\texttt{removeCurrentGame}, \texttt{switchScreen}, \texttt{pack}, \texttt{requestFocusInWindow}}{\texttt{startGame}}
+\fn{public void startGame(GameEngine engine)}{\texttt{new GamePanel(engine, this::quitGame)}, \texttt{showGame}}{\texttt{MainMenu.startNewGame}, \texttt{loadGame}}
+\fn{public void quitGame()}{\texttt{removeCurrentGame}, \texttt{switchScreen}, \texttt{pack}}{\texttt{GamePanel} (\texttt{onQuit})}
+\fn{private void removeCurrentEditor()}{\texttt{cardPanel.remove}}{\texttt{openEditor}, \texttt{closeEditor}}
+\fn{public void openEditor()}{\texttt{removeCurrentEditor}, \texttt{new MapEditor(this::closeEditor)}, \texttt{switchScreen}, \texttt{pack}}{\texttt{MainMenu} \textit{Create map} gomb}
+\fn{public void closeEditor()}{\texttt{removeCurrentEditor}, \texttt{switchScreen}, \texttt{pack}}{\texttt{MapEditor} (\texttt{onBack})}
+\end{itemize}
+
+\subsection*{\texttt{Main}}
+\begin{itemize}
+\fn{public static void main(String[] args)}{\texttt{SwingUtilities.invokeLater}, \texttt{new MainFrame}, \texttt{setVisible}}{a JVM}
+\end{itemize}
+
+\section*{Egy teljes lépés útja (gyakorló „gráfséta”)}
+\texttt{Timer} $\to$ \texttt{GameEngine.update()} $\to$ \texttt{step()} $\to$ \texttt{PacMan.processInput()} $\to$ \texttt{MoveCommand.execute()} $\to$ \texttt{Labyrinth.isWalkable()} $\to$ \texttt{getCell()}; majd \texttt{stepIfOpen()} $\to$ \texttt{rememberPosition()}, \texttt{move()}; szellemenként \texttt{chooseChaseDirection()} $\to$ \texttt{strategy.target()} $\to$ \texttt{chooseDirectionTowards()} $\to$ \texttt{possibleDirections()} $\to$ \texttt{canStep()}; \texttt{respawn()}; \texttt{checkCollisions()} $\to$ \texttt{collidesWith()} $\to$ \texttt{eatGhost()}/\texttt{loseLife()}; \texttt{hasDotsLeft()} $\to$ \texttt{nextLevel()}; végül \texttt{repaint()} $\to$ \texttt{paintComponent()} $\to$ \texttt{getStepProgress()}, \texttt{interpolate()}.
+
+\end{document}

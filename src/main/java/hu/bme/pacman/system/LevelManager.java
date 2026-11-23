@@ -256,7 +256,7 @@ public final class LevelManager {
         }
 
         // Best score first; loadFromCSV already guarantees it on disk, this just does not trust that blindly.
-        entries.sort(Comparator.comparingInt(HighscoreEntry::score).reversed());
+        entries.sort(Comparator.comparingInt(HighscoreEntry::getScore).reversed());
         return entries;
     }
 
@@ -283,12 +283,12 @@ public final class LevelManager {
 
         List<HighscoreEntry> entries = loadHighscores(file);
         entries.add(newEntry);
-        entries.sort(Comparator.comparingInt(HighscoreEntry::score).reversed());
+        entries.sort(Comparator.comparingInt(HighscoreEntry::getScore).reversed());
 
         try (BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8)) {
             for (HighscoreEntry entry : entries) {
-                writer.write(entry.playerName() + HIGHSCORE_SEPARATOR + entry.score()
-                        + HIGHSCORE_SEPARATOR + entry.date());
+                writer.write(entry.getPlayerName() + HIGHSCORE_SEPARATOR + entry.getScore()
+                        + HIGHSCORE_SEPARATOR + entry.getDate());
                 writer.newLine();
             }
         }

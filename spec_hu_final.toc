@@ -1,0 +1,9 @@
+\babel@toc {hungarian}{}\relax 
+\contentsline {section}{\numberline {1}A feladat}{2}{section.1}%
+\contentsline {section}{\numberline {2}Használati esetek}{2}{section.2}%
+\contentsline {section}{\numberline {3}A megoldás vázlata}{2}{section.3}%
+\contentsline {section}{\numberline {4}Játékciklus, mozgás és ütközések}{3}{section.4}%
+\contentsline {section}{\numberline {5}Tervezési minták}{5}{section.5}%
+\contentsline {section}{\numberline {6}Fájlkezelés és perzisztencia}{7}{section.6}%
+\contentsline {section}{\numberline {7}Egységtesztelés}{7}{section.7}%
+\contentsline {section}{\numberline {8}Felhasználói kézikönyv}{8}{section.8}%

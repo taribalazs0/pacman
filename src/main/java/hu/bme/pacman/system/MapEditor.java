@@ -246,7 +246,7 @@ public class MapEditor extends JPanel {
      * Only call it after findProblem() returned null (Pac-Man must be placed).
      */
     private LevelData toLevelData() {
-        PacMan pacman = new PacMan(pacmanStart.x(), pacmanStart.y());
+        PacMan pacman = new PacMan(pacmanStart.getX(), pacmanStart.getY());
         return new LevelData(new Labyrinth(grid), pacman, ghosts);
     }
 
@@ -420,7 +420,7 @@ public class MapEditor extends JPanel {
             drawGhost(g, ghost.getPersonality(), ghost.getX() * TILE, ghost.getY() * TILE, TILE);
         }
         if (pacmanStart != null) {
-            drawPacman(g, pacmanStart.x() * TILE, pacmanStart.y() * TILE, TILE);
+            drawPacman(g, pacmanStart.getX() * TILE, pacmanStart.getY() * TILE, TILE);
         }
     }
 

@@ -122,7 +122,7 @@ The software's graphical user interface is built using the Java Swing framework,
         \item The panel does not know the \texttt{MainFrame}: the frame passes in ``go back to the menu'' as a \texttt{Runnable} callback (\texttt{onQuit}), and the panel only reports that the player quit.
     \end{itemize}
     \item \textbf{LeaderboardPanel (JPanel):} A read-only view of \texttt{highscores.csv}: rank, player name, score and date, one row per game, best first, in a monospaced font so the columns line up, with a \textit{Back to menu} button. It never writes the file. \texttt{refresh()} reloads the file each time the screen is shown; the leaderboard only changes between games, so no timer is needed. With no file yet it shows ``No scores yet''.
-    \item \textbf{HighscoreEntry (record):} One row of the leaderboard (\texttt{playerName}, \texttt{score}, \texttt{date} as a \texttt{LocalDate}). It only carries data between the \texttt{LevelManager} and the \texttt{LeaderboardPanel}, so it belongs to the UI and I/O package, not to the game model.
+    \item \textbf{HighscoreEntry:} One row of the leaderboard (\texttt{playerName}, \texttt{score}, \texttt{date} as a \texttt{LocalDate}). It only carries data between the \texttt{LevelManager} and the \texttt{LeaderboardPanel}, so it belongs to the UI and I/O package, not to the game model.
     \item \textbf{MapEditor (JPanel):} The screen for drawing custom maps: a clickable grid in the middle, a tool palette on the right, and \textit{BACK} and \textit{SAVE MAP} buttons on top.
     \begin{itemize}
         \item \textbf{Fixed size and Ghost House:} the grid is always $19 \times 21$ tiles (\texttt{MAP\_WIDTH}, \texttt{MAP\_HEIGHT}), the size of \texttt{level1.txt}, and starts empty (black). The Ghost House is copied from \texttt{level1.txt} and stored as a small template in the map-file symbols (\texttt{GHOST\_HOUSE}): the $5 \times 3$ block of columns 7--11 and rows 8--10 (counted from 0) with the \texttt{AMBUSHER}, \texttt{WANDERER} and \texttt{CHAOTIC} ghosts inside, plus the \texttt{TRACKER}'s tile above the top opening. These tiles are locked (\texttt{isLocked}), shown on a dark grey floor, and the four ghosts always start there; the user cannot place ghosts. This differs from the original plan, in which the ghosts' start tiles could also be placed.
@@ -197,13 +197,15 @@ The software's graphical user interface is built using the Java Swing framework,
         };
 
         \node[umlclass] (HighscoreEntry) at (-5.5, 0.3) {
-            \guillemotleft record\guillemotright \\
             \textbf{HighscoreEntry}
             \nodepart{two}
-            playerName: String \\
-            score: int \\
-            date: LocalDate
+            - playerName: String \\
+            - score: int \\
+            - date: LocalDate
             \nodepart{three}
+            + getPlayerName(): String \\
+            + getScore(): int \\
+            + getDate(): LocalDate
         };
 
         \node[umlclass] (MapEditor) at (5.5, 8.2) {
@@ -363,12 +365,13 @@ The software's graphical user interface is built using the Java Swing framework,
         };
 
         \node[umlclass] (Tile) at (-3, -23.4) {
-            \guillemotleft record, Serializable\guillemotright \\
+            \guillemotleft Serializable\guillemotright \\
             \textbf{Tile}
             \nodepart{two}
-            x, y: int
+            - x, y: int \textit{(final)}
             \nodepart{three}
-            + x(), y(): int
+            + getX(), getY(): int \\
+            + equals(o), hashCode(): \ldots
         };
 
         \node[draw, dashed, thick, font=\sffamily\footnotesize, align=left, text width=5.8cm, fill=yellow!10] (StrategyNote) at (10.2, -23.4) {
@@ -522,7 +525,7 @@ Before moving, every figure saves its previous tile with \texttt{rememberPositio
 To ensure the codebase meets university standards and demonstrates solid object-oriented principles, the implementation must explicitly utilize the following design patterns:
 
 \begin{itemize}
-    \item \textbf{Ghost Movement (Strategy Pattern):} The target-tile calculation of each personality lives in its own class (\texttt{TrackerStrategy}, \texttt{AmbusherStrategy}, \texttt{WandererStrategy}, \texttt{ChaoticStrategy}), all implementing a common \texttt{GhostStrategy} interface with one method, \texttt{Tile target(Ghost self, PacMan pacman, Labyrinth map)}. The target is returned as a \texttt{Tile}, a small immutable \texttt{record} with \texttt{x} and \texttt{y}, because a method can only return one value (\texttt{java.awt.Point} is not used, since the model must not depend on AWT). A strategy only says \textit{where} the ghost should go; \texttt{chooseDirectionTowards} decides \textit{how} to get closer. The \texttt{GhostPersonality} enum decides which strategy a ghost receives (\texttt{Ghost.strategyFor()} in the constructor), and the \texttt{Ghost} holds it as a field (composition instead of inheritance).
+    \item \textbf{Ghost Movement (Strategy Pattern):} The target-tile calculation of each personality lives in its own class (\texttt{TrackerStrategy}, \texttt{AmbusherStrategy}, \texttt{WandererStrategy}, \texttt{ChaoticStrategy}), all implementing a common \texttt{GhostStrategy} interface with one method, \texttt{Tile target(Ghost self, PacMan pacman, Labyrinth map)}. The target is returned as a \texttt{Tile}, a small immutable class with two \texttt{final} fields (\texttt{x}, \texttt{y}) and value-based \texttt{equals()} and \texttt{hashCode()}, because a method can only return one value (\texttt{java.awt.Point} is not used, since the model must not depend on AWT). A strategy only says \textit{where} the ghost should go; \texttt{chooseDirectionTowards} decides \textit{how} to get closer. The \texttt{GhostPersonality} enum decides which strategy a ghost receives (\texttt{Ghost.strategyFor()} in the constructor), and the \texttt{Ghost} holds it as a field (composition instead of inheritance).
 
     \textbf{Targets per personality:}
     \begin{itemize}

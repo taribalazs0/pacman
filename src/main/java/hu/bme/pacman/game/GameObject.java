@@ -43,6 +43,7 @@ public abstract class GameObject implements Serializable {
         prevY = y;
     }
     
+    /** Physically moves the character through the maze */
     public void move() {
         switch (direction) {
             case UP -> y -= speed;
@@ -54,7 +55,9 @@ public abstract class GameObject implements Serializable {
         }
     }
 
-    /**Puts the object back on its start tile, standing still. We do not reset the maze*/
+    /**Puts the object back on its start tile, standing still. We do not reset the maze.
+     * Used after losing a life, or advancing to the next level
+    */
     public void resetToStart() {
         this.x = startX;
         this.y = startY;
